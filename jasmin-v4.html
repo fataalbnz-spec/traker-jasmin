@@ -514,7 +514,6 @@
     <div class="live-privs-title">🔒 Registrar privado</div>
     <div class="live-priv-add-row">
       <div class="live-priv-add-fields">
-        <select class="live-priv-select" id="livePrivStartTime" title="Hora de inicio del privado"></select>
         <input type="number" class="live-priv-input" id="livePrivDur" placeholder="Duración (min)" step="1" min="1" max="300" style="width:110px;flex:none" title="Cuántos minutos duró">
         <input type="number" class="live-priv-input" id="livePrivAmt" placeholder="$ monto" step="0.01" min="0" onkeydown="if(event.key==='Enter')addLivePrivate()" style="flex:1">
       </div>
@@ -681,7 +680,6 @@
   <button class="tab-btn" onclick="switchTab('historico')">📈 Histórico</button>
   <button class="tab-btn" onclick="switchTab('add')">➕ Registrar</button>
   <button class="tab-btn" onclick="switchTab('sessions')">📋 Historial</button>
-  <button class="tab-btn" onclick="switchTab('retiros')">💸 Retiros</button>
 </div>
 
 <!-- TAB: DASHBOARD -->
@@ -936,48 +934,6 @@
   <div id="sessionList"></div>
 </div>
 
-<!-- TAB: RETIROS -->
-<div class="tab-content" id="tab-retiros">
-  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">💸 Retiros & Cobros</div>
-
-  <div class="withdraw-summary" id="withdrawSummary">
-    <div class="withdraw-sum-row">
-      <span style="color:var(--textMid)">Total ganado</span>
-      <span style="color:var(--lilacDark);font-weight:bold" id="wsTotalEarned">$0.00</span>
-    </div>
-    <div class="withdraw-sum-row">
-      <span style="color:var(--textMid)">Total retirado</span>
-      <span style="color:var(--green);font-weight:bold" id="wsTotalWithdrawn">$0.00</span>
-    </div>
-    <div class="withdraw-sum-row" style="border-top:1px solid rgba(0,0,0,0.08);padding-top:8px;margin-top:2px">
-      <span style="color:var(--textMid)">Pendiente por cobrar</span>
-      <span style="color:var(--gold);font-weight:bold;font-size:16px" id="wsPending">$0.00</span>
-    </div>
-  </div>
-
-  <!-- Add withdrawal form -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">Registrar retiro</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div>
-        <label class="form-label">Monto ($)</label>
-        <input type="number" class="form-input" id="wAmt" placeholder="0.00">
-      </div>
-      <div>
-        <label class="form-label">Fecha</label>
-        <input type="date" class="form-input" id="wDate">
-      </div>
-    </div>
-    <div style="margin-bottom:10px">
-      <label class="form-label">Nota (opcional)</label>
-      <input type="text" class="form-input" id="wNote" placeholder="Ej: PayPal, transferencia...">
-    </div>
-    <button onclick="saveWithdrawal()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--green),#5d9478);color:#fff;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;letter-spacing:1px">💸 Registrar retiro</button>
-  </div>
-
-  <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:12px">Historial de retiros</div>
-  <div id="withdrawList"><div style="text-align:center;padding:30px;color:var(--textLight);font-size:14px">Sin retiros registrados aún.</div></div>
-</div>
 
 <script>
 // ============================================================
@@ -2078,7 +2034,7 @@ function saveGoal(type) {
 // ============================================================
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-    const tabs=['dashboard','historico','add','sessions','retiros'];
+    const tabs=['dashboard','historico','add','sessions'];
     b.className = 'tab-btn' + (tabs[i]===name?' active':'');
   });
   document.querySelectorAll('.tab-content').forEach(c=>c.className='tab-content');
@@ -2087,7 +2043,6 @@ function switchTab(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='historico') renderHistorico();
   if (name==='sessions') renderSessions();
-  if (name==='retiros') renderWithdrawals();
 }
 
 // ============================================================
@@ -2127,7 +2082,6 @@ function renderAll() {
   if (activeTab==='dashboard') renderDashboard();
   if (activeTab==='historico') renderHistorico();
   if (activeTab==='sessions') renderSessions();
-  if (activeTab==='retiros') renderWithdrawals();
 }
 
 // ============================================================
@@ -2179,30 +2133,10 @@ function startLive() {
   startSel.value = closest.value;
   onDateChange();
 
-  populateLivePrivStartSelect();
-
   liveInterval = setInterval(updateLiveDisplay, 1000);
   updateLiveDisplay();
 }
 
-function populateLivePrivStartSelect() {
-  const sel = document.getElementById('livePrivStartTime');
-  if (!sel) return;
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  sel.innerHTML = TIME_SLOTS.map(({h, m, value}) => {
-    const slotMins = h * 60 + m;
-    // Pre-seleccionar la hora actual (o más cercana por debajo)
-    return `<option value="${value}">${fmtTime(h, m)}</option>`;
-  }).join('');
-  // Seleccionar el slot más cercano a la hora actual
-  const closest = TIME_SLOTS.reduce((best, slot) => {
-    const slotMins = slot.h * 60 + slot.m;
-    const bestMins = best.h * 60 + best.m;
-    return Math.abs(slotMins - nowMins) < Math.abs(bestMins - nowMins) ? slot : best;
-  });
-  sel.value = closest.value;
-}
 
 function updateLiveDisplay() {
   if (!liveStart) return;
@@ -2217,34 +2151,28 @@ function updateLiveDisplay() {
 function addLivePrivate() {
   const amtInput  = document.getElementById('livePrivAmt');
   const durInput  = document.getElementById('livePrivDur');
-  const selStart  = document.getElementById('livePrivStartTime');
   const amt = parseFloat(amtInput.value);
   if (!amt || amt <= 0) { amtInput.focus(); return; }
 
-  // Hora de inicio: lo que eligió la usuaria (o la hora actual si no hay select)
-  let startH, startM;
-  if (selStart && selStart.value) {
-    const parsed = parseTimeVal(selStart.value);
-    startH = parsed.h; startM = parsed.m;
-  } else {
-    const now = new Date();
-    startH = now.getHours(); startM = now.getMinutes();
-  }
-
-  // Duración en minutos
   const durMins = parseInt(durInput.value) || 0;
 
-  // Hora de fin = inicio + duración
-  let endH = startH, endM = startM;
+  // Hora actual = momento en que se registra (fin del privado)
+  const now = new Date();
+  const endH = now.getHours();
+  const endM = now.getMinutes();
+
+  // Hora de inicio = hora actual − duración
+  let startH = endH, startM = endM;
   if (durMins > 0) {
-    const totalMins = startH * 60 + startM + durMins;
-    endH = Math.floor(totalMins / 60) % 24;
-    endM = totalMins % 60;
+    const startTotal = endH * 60 + endM - durMins;
+    const startAdj = ((startTotal % 1440) + 1440) % 1440; // maneja cruce de medianoche
+    startH = Math.floor(startAdj / 60);
+    startM = startAdj % 60;
   }
 
   livePrivatesQueue.push({
-    h: startH, m: startM,         // hora de inicio
-    endH, endM,                    // hora de fin
+    h: startH, m: startM,         // hora de inicio (calculada)
+    endH, endM,                    // hora de fin (ahora)
     duration: durMins || null,     // duración en minutos
     amount: amt,
     id: Date.now()
@@ -2770,8 +2698,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
   state.privGoal = parseInt(localStorage.getItem('lj_priv_goal')) || 20;
   try { const w = localStorage.getItem('lj_withdrawals'); if(w) state.withdrawals = JSON.parse(w); } catch(e){}
   state.withdrawals = state.withdrawals || [];
-  // Set today on withdrawal form
-  document.getElementById('wDate').value = today();
   initAddForm();
   // No renderAll aquí — se llama después del login o skip
 
@@ -2805,7 +2731,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
       liveInterval = setInterval(updateLiveDisplay, 1000);
       updateLiveDisplay();
       renderLivePrivList();
-      populateLivePrivStartSelect();
     }
   } catch(e) { localStorage.removeItem('lj_live_start'); localStorage.removeItem('lj_live_privates'); }
 });
