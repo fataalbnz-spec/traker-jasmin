@@ -458,6 +458,26 @@
   #ls-needs-config strong{color:#6a4020}
   #ls-needs-config code{background:#f5e8c8;border-radius:4px;padding:1px 5px;font-size:.7rem}
 
+  /* ── CAL AGENDA ── */
+  .cal-agenda-cell{background:var(--bgCard);border:1px solid var(--border);border-radius:7px;padding:4px 3px;min-height:42px;cursor:pointer;text-align:center;transition:all .15s;position:relative}
+  .cal-agenda-cell:hover{border-color:var(--lilac)}
+  .cal-agenda-cell.selected{outline:2px solid var(--lilacDark)}
+  .cal-agenda-cell.estado-disponible{background:var(--greenLight);border-color:var(--green)}
+  .cal-agenda-cell.estado-comprometido{background:var(--roseLight);border-color:var(--rose)}
+  .cal-agenda-cell.estado-descanso{background:var(--lilacLight);border-color:var(--lilac)}
+  .cal-agenda-cell.estado-registrado{background:var(--goldLight);border-color:var(--gold)}
+  .cal-agenda-cell.today-cell{outline:2px solid var(--lilacDark);font-weight:bold}
+  .cal-agenda-daynum{font-size:11px;font-weight:bold;color:var(--text)}
+  .sim-day-selected{background:var(--lilacLight)!important;border-color:var(--lilacDark)!important;color:var(--lilacDark)!important}
+  .gasto-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;font-size:13px}
+  .gasto-del{background:none;border:none;color:var(--textLight);cursor:pointer;font-size:13px;padding:2px 4px}
+  .cycle-card{background:var(--bgCard);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+  .cycle-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .cycle-badge{font-size:9px;letter-spacing:1px;text-transform:uppercase;background:var(--lilacLight);color:var(--lilacDark);border-radius:20px;padding:2px 8px}
+  .bonus-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px;background:var(--goldLight);border:1px solid var(--gold);border-radius:10px;margin-bottom:8px}
+  .bonus-type-badge{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);background:rgba(201,169,110,0.15);border-radius:20px;padding:2px 7px}
+  .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
 </style>
 </head>
 <body>
@@ -516,6 +536,18 @@
     </div>
     <div class="live-priv-list" id="livePrivList">
       <span class="live-priv-empty">Ningún privado aún</span>
+    </div>
+  </div>
+
+  <!-- PROPINAS EN VIVO -->
+  <div class="live-privs-section" style="margin-top:10px">
+    <div class="live-privs-title">💝 Registrar propina</div>
+    <div class="live-priv-add-row">
+      <input type="number" class="live-priv-input" id="liveTipAmt" placeholder="Monto en $..." step="0.01" min="0" onkeydown="if(event.key==='Enter')addLiveTip()">
+      <button class="live-priv-save-btn" style="background:var(--roseDark)" onclick="addLiveTip()">+ Agregar</button>
+    </div>
+    <div class="live-priv-list" id="liveTipList">
+      <span class="live-priv-empty">Ninguna propina aún</span>
     </div>
   </div>
 </div>
@@ -675,7 +707,10 @@
   <button class="tab-btn" onclick="switchTab('historico')">📈 Histórico</button>
   <button class="tab-btn" onclick="switchTab('add')">➕ Registrar</button>
   <button class="tab-btn" onclick="switchTab('sessions')">📋 Historial</button>
-  <button class="tab-btn" onclick="switchTab('retiros')">💸 Retiros</button>
+  <button class="tab-btn" onclick="switchTab('acumulado')">💰 Acumulado</button>
+  <button class="tab-btn" onclick="switchTab('simulador')">🔮 Simulador</button>
+  <button class="tab-btn" onclick="switchTab('finanzas')">🏦 Finanzas</button>
+  <button class="tab-btn" onclick="switchTab('calendario')">📅 Agenda</button>
 </div>
 
 <!-- TAB: DASHBOARD -->
@@ -913,6 +948,28 @@
       <label class="form-label">Notas del día</label>
       <textarea class="form-input" id="dayNotes" placeholder="Outfit, ambiente, algo que noté..." rows="2" style="resize:none"></textarea>
     </div>
+
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--borderLight)">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:10px">Extras del día</div>
+      <div class="form-grid-2">
+        <div>
+          <label class="form-label">💝 Propinas recibidas</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--textMid);font-size:13px">$</span>
+            <input type="number" class="form-input" id="dayTips" placeholder="0.00" min="0" step="0.01" style="padding-left:24px">
+          </div>
+          <div style="font-size:10px;color:var(--textLight);margin-top:3px">Se suman a tus ganancias del día</div>
+        </div>
+        <div>
+          <label class="form-label">🎁 Bono del día</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--textMid);font-size:13px">$</span>
+            <input type="number" class="form-input" id="dayBonus" placeholder="0.00" min="0" step="0.01" style="padding-left:24px">
+          </div>
+          <input type="text" class="form-input" id="dayBonusNote" placeholder="Ej: bono semanal, meta cumplida..." style="margin-top:6px;font-size:12px">
+        </div>
+      </div>
+    </div>
   </div>
 
   <button class="btn-primary" id="saveBlockBtn" onclick="saveBlock()">Guardar día</button>
@@ -930,47 +987,238 @@
   <div id="sessionList"></div>
 </div>
 
-<!-- TAB: RETIROS -->
-<div class="tab-content" id="tab-retiros">
-  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">💸 Retiros & Cobros</div>
+<!-- TAB: ACUMULADO (replaces Retiros) -->
+<div class="tab-content" id="tab-acumulado">
+  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">💰 Acumulado & Ciclos de Pago</div>
 
-  <div class="withdraw-summary" id="withdrawSummary">
-    <div class="withdraw-sum-row">
-      <span style="color:var(--textMid)">Total ganado</span>
-      <span style="color:var(--lilacDark);font-weight:bold" id="wsTotalEarned">$0.00</span>
+  <!-- CONFIGURACIÓN DE FECHA DE CORTE -->
+  <div class="card mb18" style="border:1.5px solid var(--lilac)">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:12px">⚙️ Configurar fecha de corte</div>
+    <div style="font-size:12px;color:var(--textMid);margin-bottom:12px;line-height:1.6">Define cuándo inicia tu período de pago. LiveJasmin paga cada 14 días desde tu fecha de corte.</div>
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div>
+        <label class="form-label">Fecha de inicio del período actual</label>
+        <input type="date" class="form-input" id="cutDateInput">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button onclick="saveCutDate()" style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--lilacDark);color:#fff;font-size:13px;cursor:pointer;font-family:inherit">Guardar fecha ✓</button>
+      </div>
     </div>
-    <div class="withdraw-sum-row">
-      <span style="color:var(--textMid)">Total retirado</span>
-      <span style="color:var(--green);font-weight:bold" id="wsTotalWithdrawn">$0.00</span>
+    <div style="font-size:11px;color:var(--textLight)" id="cutDateStatus">Sin fecha de corte configurada — usando inicio automático</div>
+  </div>
+
+  <div class="card mb18" id="acumSummaryCard" style="background:linear-gradient(135deg,var(--lilacLight),var(--goldLight));border:1px solid var(--lilac)">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:14px">📊 Tu situación actual</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.6);border-radius:10px">
+        <div style="font-size:10px;color:var(--textLight);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Acumulado actual</div>
+        <div style="font-size:22px;font-weight:bold;color:var(--lilacDark)" id="acumCurrentTotal">$0.00</div>
+        <div style="font-size:10px;color:var(--textLight)" id="acumPeriodDates">—</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.6);border-radius:10px">
+        <div style="font-size:10px;color:var(--textLight);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Próximo cobro en</div>
+        <div style="font-size:22px;font-weight:bold;color:var(--gold)" id="acumDaysLeft">—</div>
+        <div style="font-size:10px;color:var(--textLight)" id="acumNextDate">—</div>
+      </div>
     </div>
-    <div class="withdraw-sum-row" style="border-top:1px solid rgba(0,0,0,0.08);padding-top:8px;margin-top:2px">
-      <span style="color:var(--textMid)">Pendiente por cobrar</span>
-      <span style="color:var(--gold);font-weight:bold;font-size:16px" id="wsPending">$0.00</span>
+    <div style="background:rgba(255,255,255,0.5);border-radius:10px;height:8px;overflow:hidden;margin-bottom:6px">
+      <div id="acumProgressBar" style="height:100%;border-radius:10px;background:linear-gradient(90deg,var(--lilac),var(--gold));transition:width 0.6s;width:0%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textMid)" id="acumProgressLabel">
+      <span>Inicio período</span><span>Cobro automático</span>
     </div>
   </div>
 
-  <!-- Add withdrawal form -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">Registrar retiro</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+  <!-- Historial de ciclos de 14 días -->
+  <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:12px">Historial de cobros (ciclos de 14 días)</div>
+  <div id="acumCyclesList"></div>
+
+  <!-- Bonos adicionales -->
+  <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin:16px 0 12px">🎁 Bonos registrados</div>
+  <div class="card mb14">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:12px">Registrar bono</div>
+    <div class="form-grid-2" style="margin-bottom:10px">
       <div>
         <label class="form-label">Monto ($)</label>
-        <input type="number" class="form-input" id="wAmt" placeholder="0.00">
+        <input type="number" class="form-input" id="bonusAmt" placeholder="0.00" min="0" step="0.01">
       </div>
       <div>
         <label class="form-label">Fecha</label>
-        <input type="date" class="form-input" id="wDate">
+        <input type="date" class="form-input" id="bonusDate">
       </div>
     </div>
-    <div style="margin-bottom:10px">
-      <label class="form-label">Nota (opcional)</label>
-      <input type="text" class="form-input" id="wNote" placeholder="Ej: PayPal, transferencia...">
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div>
+        <label class="form-label">Tipo</label>
+        <select class="form-input" id="bonusType">
+          <option value="semanal">🏆 Bono semanal</option>
+          <option value="mensual">🗓️ Bono mensual</option>
+          <option value="meta">🎯 Meta cumplida</option>
+          <option value="especial">⭐ Especial</option>
+          <option value="otro">📌 Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Descripción</label>
+        <input type="text" class="form-input" id="bonusNote" placeholder="Ej: bono top model...">
+      </div>
     </div>
-    <button onclick="saveWithdrawal()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--green),#5d9478);color:#fff;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;letter-spacing:1px">💸 Registrar retiro</button>
+    <button onclick="saveBonus()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),var(--roseDark));color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">🎁 Registrar bono</button>
+  </div>
+  <div id="bonusList"></div>
+</div>
+
+<!-- TAB: SIMULADOR -->
+<div class="tab-content" id="tab-simulador">
+  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">🔮 Simulador de ingresos</div>
+
+  <div class="card mb18">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">¿Cuánto puedo ganar si trabajo…?</div>
+    <div style="margin-bottom:12px">
+      <label class="form-label">Días que planeas trabajar esta semana</label>
+      <div id="simDayPicker" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+        <button class="check-toggle" id="simDay1" onclick="toggleSimDay(1)">Lun</button>
+        <button class="check-toggle" id="simDay2" onclick="toggleSimDay(2)">Mar</button>
+        <button class="check-toggle" id="simDay3" onclick="toggleSimDay(3)">Mié</button>
+        <button class="check-toggle" id="simDay4" onclick="toggleSimDay(4)">Jue</button>
+        <button class="check-toggle" id="simDay5" onclick="toggleSimDay(5)">Vie</button>
+        <button class="check-toggle" id="simDay6" onclick="toggleSimDay(6)">Sáb</button>
+        <button class="check-toggle" id="simDay0" onclick="toggleSimDay(0)">Dom</button>
+      </div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:12px">
+      <div>
+        <label class="form-label">Horas por día</label>
+        <input type="range" min="1" max="12" value="4" id="simHours" oninput="updateSimulator()" style="accent-color:var(--lilac);width:100%">
+        <div style="text-align:center;font-size:13px;color:var(--lilacDark);font-weight:bold" id="simHoursLabel">4h por día</div>
+      </div>
+      <div>
+        <label class="form-label">Meta de privados/sesión</label>
+        <input type="range" min="0" max="20" value="5" id="simPrivs" oninput="updateSimulator()" style="accent-color:var(--rose);width:100%">
+        <div style="text-align:center;font-size:13px;color:var(--roseDark);font-weight:bold" id="simPrivsLabel">5 privados</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--lilacLight),var(--goldLight));border-radius:14px;padding:16px;text-align:center">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:8px">Proyección estimada</div>
+      <div style="font-size:28px;font-weight:bold;color:var(--lilacDark)" id="simProjection">$0.00</div>
+      <div style="font-size:11px;color:var(--textMid);margin-top:4px" id="simProjectionSub">Basado en tu promedio histórico</div>
+    </div>
+    <div id="simBreakdown" style="margin-top:12px"></div>
   </div>
 
-  <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:12px">Historial de retiros</div>
-  <div id="withdrawList"><div style="text-align:center;padding:30px;color:var(--textLight);font-size:14px">Sin retiros registrados aún.</div></div>
+  <div class="card mb18">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">¿Cuánto necesito trabajar para llegar a mi meta?</div>
+    <div class="form-grid-2" style="margin-bottom:12px">
+      <div>
+        <label class="form-label">Meta de ingresos ($)</label>
+        <input type="number" class="form-input" id="simTarget" placeholder="500" oninput="updateSimulator()">
+      </div>
+      <div>
+        <label class="form-label">Ya llevo ganado esta semana ($)</label>
+        <input type="number" class="form-input" id="simAlready" placeholder="0" oninput="updateSimulator()">
+      </div>
+    </div>
+    <div id="simTargetResult" style="background:var(--greenLight);border-radius:10px;padding:12px;font-size:13px;color:var(--green);display:none"></div>
+  </div>
+</div>
+
+<!-- TAB: FINANZAS -->
+<div class="tab-content" id="tab-finanzas">
+  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">🏦 Planeador financiero</div>
+
+  <div class="card mb18">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">Mis gastos fijos mensuales</div>
+    <div id="gastosList"></div>
+    <div class="form-grid-2" style="margin-top:10px;margin-bottom:10px">
+      <input type="text" class="form-input" id="gastoNombre" placeholder="Ej: Arriendo, internet...">
+      <div style="position:relative">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--textMid)">$</span>
+        <input type="number" class="form-input" id="gastoMonto" placeholder="0.00" style="padding-left:22px">
+      </div>
+    </div>
+    <button onclick="addGasto()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--lilac);background:var(--lilacLight);color:var(--lilacDark);font-size:13px;cursor:pointer;font-family:inherit">+ Agregar gasto</button>
+  </div>
+
+  <div class="card mb18" id="finanzasSummary" style="background:linear-gradient(135deg,var(--greenLight),var(--lilacLight))">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">📊 Resumen financiero</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:rgba(255,255,255,0.7);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--textLight);margin-bottom:4px">Gastos fijos/mes</div>
+        <div style="font-size:18px;font-weight:bold;color:var(--roseDark)" id="finTotalGastos">$0.00</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.7);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--textLight);margin-bottom:4px">Mínimo necesario</div>
+        <div style="font-size:18px;font-weight:bold;color:var(--gold)" id="finMinimo">$0.00</div>
+        <div style="font-size:9px;color:var(--textLight)">para cubrir gastos</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.7);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--textLight);margin-bottom:4px">Promedio mensual tuyo</div>
+        <div style="font-size:18px;font-weight:bold;color:var(--lilacDark)" id="finPromedioMes">$0.00</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.7);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--textLight);margin-bottom:4px">Ahorro estimado/mes</div>
+        <div style="font-size:18px;font-weight:bold;color:var(--green)" id="finAhorro">$0.00</div>
+      </div>
+    </div>
+    <div id="finMensaje" style="font-size:12px;color:var(--textMid);padding:10px;background:rgba(255,255,255,0.5);border-radius:8px;line-height:1.6"></div>
+  </div>
+
+  <div class="card mb14">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:14px">🎯 Meta de ahorro</div>
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div>
+        <label class="form-label">¿Para qué ahorras?</label>
+        <input type="text" class="form-input" id="ahorroPara" placeholder="Ej: viaje, laptop...">
+      </div>
+      <div>
+        <label class="form-label">Monto objetivo ($)</label>
+        <input type="number" class="form-input" id="ahorroMeta" placeholder="1000">
+      </div>
+    </div>
+    <button onclick="calcAhorro()" style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--green);color:#fff;font-size:13px;cursor:pointer;font-family:inherit">Calcular cuándo llego 🎯</button>
+    <div id="ahorroResult" style="margin-top:12px;font-size:12px;color:var(--textMid);display:none"></div>
+  </div>
+</div>
+
+<!-- TAB: CALENDARIO / AGENDA -->
+<div class="tab-content" id="tab-calendario">
+  <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:16px">📅 Agenda de disponibilidad</div>
+
+  <div class="card mb14">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <button onclick="calAgendaPrev()" style="background:var(--lilacLight);border:1px solid var(--lilac);color:var(--lilacDark);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit">‹</button>
+      <div style="font-size:13px;font-weight:bold;color:var(--lilacDark)" id="calAgendaTitle"></div>
+      <button onclick="calAgendaNext()" style="background:var(--lilacLight);border:1px solid var(--lilac);color:var(--lilacDark);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">L</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">M</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">X</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">J</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">V</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">S</div>
+      <div style="text-align:center;font-size:9px;color:var(--textLight);padding:3px;text-transform:uppercase">D</div>
+    </div>
+    <div id="calAgendaGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--textMid)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--greenLight);border:1px solid var(--green);border-radius:3px;vertical-align:middle;margin-right:3px"></span>Disponible</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--roseLight);border:1px solid var(--rose);border-radius:3px;vertical-align:middle;margin-right:3px"></span>Comprometido</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--lilacLight);border:1px solid var(--lilac);border-radius:3px;vertical-align:middle;margin-right:3px"></span>Descanso</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--goldLight);border:1px solid var(--gold);border-radius:3px;vertical-align:middle;margin-right:3px"></span>Registrado</span>
+    </div>
+  </div>
+
+  <div class="card mb14" id="calAgendaStats"></div>
+
+  <div class="card">
+    <div style="font-size:10px;letter-spacing:1px;color:var(--textLight);text-transform:uppercase;margin-bottom:10px">Marcar días seleccionados como:</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="markAgendaDays('disponible')" style="flex:1;padding:9px;border-radius:9px;border:1px solid var(--green);background:var(--greenLight);color:var(--green);font-size:12px;cursor:pointer;font-family:inherit">✅ Disponible</button>
+      <button onclick="markAgendaDays('comprometido')" style="flex:1;padding:9px;border-radius:9px;border:1px solid var(--rose);background:var(--roseLight);color:var(--roseDark);font-size:12px;cursor:pointer;font-family:inherit">❌ Comprometido</button>
+      <button onclick="markAgendaDays('descanso')" style="flex:1;padding:9px;border-radius:9px;border:1px solid var(--lilac);background:var(--lilacLight);color:var(--lilacDark);font-size:12px;cursor:pointer;font-family:inherit">😴 Descanso</button>
+      <button onclick="markAgendaDays(null)" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--textMid);font-size:12px;cursor:pointer;font-family:inherit">🗑 Limpiar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -996,6 +1244,15 @@ let state = {
   monthMetric: 'both',
   selectedYear: null,
 };
+
+// New v5 state
+let bonuses = JSON.parse(localStorage.getItem('lj_bonuses') || '[]');
+let gastos  = JSON.parse(localStorage.getItem('lj_gastos')  || '[]');
+let agenda  = JSON.parse(localStorage.getItem('lj_agenda')  || '{}');
+let simSelectedDays = new Set();
+let calAgendaYear = new Date().getFullYear();
+let calAgendaMonth = new Date().getMonth();
+let agendaSelectedCells = new Set();
 
 let weekChart = null, monthChart = null, hourChart = null, dayChart = null;
 let expandedDay = null, expandedBlock = null;
@@ -1757,6 +2014,15 @@ function saveBlock() {
   const notes = document.getElementById('dayNotes').value;
   const period = state.period;
   const periodIntensity = period ? parseInt(document.getElementById('periodRange').value) : 0;
+  const tips  = parseFloat(document.getElementById('dayTips').value)  || 0;
+  const dayBonusAmt  = parseFloat(document.getElementById('dayBonus').value) || 0;
+  const dayBonusNote = document.getElementById('dayBonusNote').value.trim();
+
+  // Save day bonus as a standalone bonus entry if filled
+  if (dayBonusAmt > 0) {
+    bonuses.unshift({ id: Date.now(), date, amt: dayBonusAmt, type: 'diario', note: dayBonusNote || 'Bono del día' });
+    localStorage.setItem('lj_bonuses', JSON.stringify(bonuses));
+  }
 
   const blockEntry = {
     id: Date.now(),
@@ -1766,33 +2032,52 @@ function saveBlock() {
     privates: livePrivatesQueue.length ? livePrivatesQueue.map(p=>({h:p.h,m:p.m,amount:p.amount})) : []
   };
   livePrivatesQueue = [];
+  // Sumar propinas del live a las propinas del form
+  const liveTipsTotal = liveTipsQueue.reduce((a, t) => a + t.amount, 0);
+  if (liveTipsTotal > 0) {
+    const tipEl = document.getElementById('dayTips');
+    tipEl.value = ((parseFloat(tipEl.value)||0) + liveTipsTotal).toFixed(2);
+    // Recalcular tips con el nuevo valor
+    tips = parseFloat(tipEl.value) || 0;
+  }
+  liveTipsQueue = [];
 
   const existingIdx = state.days.findIndex(d=>d.date===date);
   if (existingIdx >= 0) {
     const d = state.days[existingIdx];
     const blocks = [...d.blocks, blockEntry];
+    const privEarnings = blocks.reduce((a,b)=>a+b.privates.reduce((x,p)=>x+p.amount,0),0);
     state.days[existingIdx] = {
       ...d, mood, activity:{...state.activity}, period, periodIntensity, notes, blocks,
       totalHours: blocks.reduce((a,b)=>a+b.durationHours,0),
       mobileHours: blocks.filter(b=>b.fromMobile).reduce((a,b)=>a+b.durationHours,0),
-      totalEarnings: blocks.reduce((a,b)=>a+b.privates.reduce((x,p)=>x+p.amount,0),0)
+      tips: (d.tips||0) + tips,
+      totalEarnings: privEarnings + (d.tips||0) + tips
     };
   } else {
+    const privEarnings = blockEntry.privates.reduce((x,p)=>x+p.amount,0);
     const newDay = {
       id: Date.now()+1, date, dayOfWeek: new Date(date+'T12:00:00').getDay(),
       mood, activity:{...state.activity}, period, periodIntensity, notes,
       blocks:[blockEntry],
       totalHours: blockEntry.durationHours,
       mobileHours: blockEntry.fromMobile?blockEntry.durationHours:0,
-      totalEarnings: 0
+      tips,
+      totalEarnings: privEarnings + tips
     };
     state.days.unshift(newDay);
     state.days.sort((a,b)=>b.date.localeCompare(a.date));
   }
 
+  // Auto-mark day as registered in agenda
+  if (!agenda[date]) { agenda[date] = 'registrado'; localStorage.setItem('lj_agenda', JSON.stringify(agenda)); }
+
   saveData();
   livePrivatesQueue = [];
   localStorage.removeItem('lj_live_privates');
+  document.getElementById('dayTips').value = '';
+  document.getElementById('dayBonus').value = '';
+  document.getElementById('dayBonusNote').value = '';
   renderAll();
 
   const btn = document.getElementById('saveBlockBtn');
@@ -2069,16 +2354,19 @@ function saveGoal(type) {
 // ============================================================
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-    const tabs=['dashboard','historico','add','sessions','retiros'];
+    const tabs=['dashboard','historico','add','sessions','acumulado','simulador','finanzas','calendario'];
     b.className = 'tab-btn' + (tabs[i]===name?' active':'');
   });
   document.querySelectorAll('.tab-content').forEach(c=>c.className='tab-content');
   document.getElementById('tab-'+name).className='tab-content active';
 
-  if (name==='dashboard') renderDashboard();
-  if (name==='historico') renderHistorico();
-  if (name==='sessions') renderSessions();
-  if (name==='retiros') renderWithdrawals();
+  if (name==='dashboard')   renderDashboard();
+  if (name==='historico')   renderHistorico();
+  if (name==='sessions')    renderSessions();
+  if (name==='acumulado')   renderAcumulado();
+  if (name==='simulador')   initSimulador();
+  if (name==='finanzas')    renderFinanzas();
+  if (name==='calendario')  renderCalAgenda();
 }
 
 // ============================================================
@@ -2115,10 +2403,11 @@ function renderAll() {
   renderStreak();
   renderPrivGoal();
   const activeTab = document.querySelector('.tab-content.active')?.id?.replace('tab-','');
-  if (activeTab==='dashboard') renderDashboard();
-  if (activeTab==='historico') renderHistorico();
-  if (activeTab==='sessions') renderSessions();
-  if (activeTab==='retiros') renderWithdrawals();
+  if (activeTab==='dashboard')  renderDashboard();
+  if (activeTab==='historico')  renderHistorico();
+  if (activeTab==='sessions')   renderSessions();
+  if (activeTab==='acumulado')  renderAcumulado();
+  if (activeTab==='finanzas')   renderFinanzas();
 }
 
 // ============================================================
@@ -2128,6 +2417,8 @@ let liveStart = null;
 let liveInterval = null;
 let liveStartTime = null; // { h, m }
 let livePrivatesQueue = []; // privados registrados durante el live
+let liveTipsQueue     = []; // propinas registradas durante el live
+let cutDate = localStorage.getItem('lj_cut_date') || null; // fecha de corte configurada
 
 // ============================================================
 // LIVE TIMER / PUNCH IN-OUT
@@ -2144,11 +2435,14 @@ function startLive() {
   liveStart = new Date();
   liveStartTime = { h: liveStart.getHours(), m: liveStart.getMinutes() };
   livePrivatesQueue = [];
+  liveTipsQueue = [];
   renderLivePrivList();
+  renderLiveTipList();
 
   // Persistir en localStorage
   localStorage.setItem('lj_live_start', liveStart.getTime().toString());
   localStorage.setItem('lj_live_privates', JSON.stringify(livePrivatesQueue));
+  localStorage.setItem('lj_live_tips', JSON.stringify(liveTipsQueue));
 
   document.getElementById('liveBanner').classList.add('active');
   document.getElementById('punchBtn').classList.add('live');
@@ -2202,21 +2496,71 @@ function removeLivePrivate(id) {
   renderLivePrivList();
 }
 
+function addLiveTip() {
+  const input = document.getElementById('liveTipAmt');
+  const amt = parseFloat(input.value);
+  if (!amt || amt <= 0) { input.focus(); return; }
+  const now = new Date();
+  liveTipsQueue.push({ h: now.getHours(), m: now.getMinutes(), amount: amt, id: Date.now() });
+  input.value = '';
+  input.focus();
+  localStorage.setItem('lj_live_tips', JSON.stringify(liveTipsQueue));
+  renderLiveTipList();
+}
+
+function removeLiveTip(id) {
+  liveTipsQueue = liveTipsQueue.filter(t => t.id !== id);
+  localStorage.setItem('lj_live_tips', JSON.stringify(liveTipsQueue));
+  renderLiveTipList();
+}
+
+function renderLiveTipList() {
+  const list = document.getElementById('liveTipList');
+  if (!list) return;
+  const total = liveTipsQueue.reduce((a, t) => a + t.amount, 0);
+  const count = liveTipsQueue.length;
+  if (!count) {
+    list.innerHTML = '<span class="live-priv-empty">Ninguna propina aún</span>';
+    return;
+  }
+  list.innerHTML = liveTipsQueue.map(t =>
+    `<div class="live-priv-chip" style="border-color:rgba(212,165,176,0.5)">
+      💝 ${fmtTime(t.h,t.m)} · ${fmt(t.amount)}
+      <button class="live-priv-chip-del" onclick="removeLiveTip(${t.id})">✕</button>
+    </div>`
+  ).join('');
+  // Mostrar total propinas en el banner
+  const earningSub = document.getElementById('liveEarningSub');
+  const privTotal = livePrivatesQueue.reduce((a, p) => a + p.amount, 0);
+  const privCount = livePrivatesQueue.length;
+  if (privCount > 0 || count > 0) {
+    earningSub.style.display = 'block';
+    let txt = '';
+    if (privCount > 0) txt += `💰 ${fmt(privTotal)} en ${privCount} privado${privCount!==1?'s':''}`;
+    if (count > 0) txt += `${privCount>0?' · ':''}💝 ${fmt(total)} en propinas`;
+    earningSub.textContent = txt;
+  }
+}
+
 function renderLivePrivList() {
   const list = document.getElementById('livePrivList');
   const total = livePrivatesQueue.reduce((a, p) => a + p.amount, 0);
   const count = livePrivatesQueue.length;
+  const tipTotal = liveTipsQueue.reduce((a, t) => a + t.amount, 0);
+  const tipCount = liveTipsQueue.length;
 
-  // 3. Total ganado en banner
+  // Total ganado en banner
   const earningSub = document.getElementById('liveEarningSub');
-  if (count > 0) {
+  if (count > 0 || tipCount > 0) {
     earningSub.style.display = 'block';
-    earningSub.textContent = `💰 ${fmt(total)} en ${count} privado${count !== 1 ? 's' : ''}`;
+    let txt = '';
+    if (count > 0) txt += `💰 ${fmt(total)} en ${count} privado${count!==1?'s':''}`;
+    if (tipCount > 0) txt += `${count>0?' · ':''}💝 ${fmt(tipTotal)} en propinas`;
+    earningSub.textContent = txt;
   } else {
     earningSub.style.display = 'none';
   }
 
-  // 4. Badge en botón guardar
   updateSaveBlockBtnLabel();
 
   if (!count) {
@@ -2272,6 +2616,7 @@ function stopLive() {
   // Limpiar persistencia live
   localStorage.removeItem('lj_live_start');
   localStorage.removeItem('lj_live_privates');
+  localStorage.removeItem('lj_live_tips');
 
   document.getElementById('liveBanner').classList.remove('active');
   document.getElementById('punchBtn').classList.remove('live');
@@ -2716,7 +3061,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
     const savedStart = localStorage.getItem('lj_live_start');
     if (savedStart) {
       const savedPrivs = localStorage.getItem('lj_live_privates');
+      const savedTips  = localStorage.getItem('lj_live_tips');
       livePrivatesQueue = savedPrivs ? JSON.parse(savedPrivs) : [];
+      liveTipsQueue     = savedTips  ? JSON.parse(savedTips)  : [];
       liveStart = new Date(parseInt(savedStart));
       liveStartTime = { h: liveStart.getHours(), m: liveStart.getMinutes() };
 
@@ -2741,8 +3088,409 @@ window.addEventListener('DOMContentLoaded', ()=>{
       liveInterval = setInterval(updateLiveDisplay, 1000);
       updateLiveDisplay();
       renderLivePrivList();
+      renderLiveTipList();
     }
-  } catch(e) { localStorage.removeItem('lj_live_start'); localStorage.removeItem('lj_live_privates'); }
+  } catch(e) {
+    localStorage.removeItem('lj_live_start');
+    localStorage.removeItem('lj_live_privates');
+    localStorage.removeItem('lj_live_tips');
+  }
+
+  // Inicializar estado de fecha de corte
+  updateCutDateStatus();
+});
+
+// ============================================================
+// ACUMULADO — ciclos automáticos de 14 días
+// ============================================================
+// ══════════ FECHA DE CORTE ══════════
+function saveCutDate() {
+  const val = document.getElementById('cutDateInput').value;
+  if (!val) { alert('Selecciona una fecha 🌸'); return; }
+  cutDate = val;
+  localStorage.setItem('lj_cut_date', cutDate);
+  updateCutDateStatus();
+  renderAcumulado();
+}
+
+function updateCutDateStatus() {
+  const el = document.getElementById('cutDateStatus');
+  const inp = document.getElementById('cutDateInput');
+  if (!el) return;
+  if (cutDate) {
+    const [y,m,d] = cutDate.split('-');
+    el.textContent = `✅ Período iniciando el ${d}/${m}/${y} — ciclos de 14 días desde esa fecha`;
+    el.style.color = 'var(--lilacDark)';
+    if (inp) inp.value = cutDate;
+  } else {
+    el.textContent = 'Sin fecha de corte configurada — usando inicio automático';
+    el.style.color = 'var(--textLight)';
+  }
+}
+
+function renderAcumulado() {
+  const fmt = v => '$' + v.toFixed(2);
+  const todayStr = today();
+  const todayDate = new Date(todayStr + 'T00:00:00');
+
+  // Determinar anchor: fecha de corte configurada o primer día registrado
+  let anchor;
+  if (cutDate) {
+    // Calcular el inicio del ciclo actual basado en la fecha de corte
+    const cutD = new Date(cutDate + 'T00:00:00');
+    const daysSinceCut = Math.floor((todayDate - cutD) / 86400000);
+    const offset = ((daysSinceCut % 14) + 14) % 14;
+    anchor = new Date(todayDate); anchor.setDate(anchor.getDate() - offset);
+  } else {
+    const allDates = state.days.map(d=>d.date).sort();
+    const anchorStr = allDates.length ? allDates[0] : todayStr;
+    const anchorDate = new Date(anchorStr + 'T00:00:00');
+    const daysSinceAnchor = Math.floor((todayDate - anchorDate) / 86400000);
+    const currentCycleOffset = daysSinceAnchor % 14;
+    anchor = new Date(todayDate); anchor.setDate(anchor.getDate() - currentCycleOffset);
+  }
+
+  const cycleStart = anchor;
+  const cycleEnd   = new Date(cycleStart); cycleEnd.setDate(cycleEnd.getDate() + 13);
+  const nextPay    = new Date(cycleEnd);   nextPay.setDate(nextPay.getDate() + 1);
+  const cycleStartStr = cycleStart.toISOString().slice(0,10);
+  const cycleEndStr   = cycleEnd.toISOString().slice(0,10);
+  const nextPayStr    = nextPay.toISOString().slice(0,10);
+  const currentCycleOffset = Math.floor((todayDate - cycleStart) / 86400000);
+  const daysLeft = Math.ceil((nextPay - todayDate) / 86400000);
+  const pct = Math.min(100, Math.round(((currentCycleOffset+1) / 14) * 100));
+
+  const cycleDays    = state.days.filter(d => d.date >= cycleStartStr && d.date <= cycleEndStr);
+  const cycleBonuses = bonuses.filter(b => b.date >= cycleStartStr && b.date <= cycleEndStr);
+  const cycleEarnings = cycleDays.reduce((a,d)=>a+d.totalEarnings,0) + cycleBonuses.reduce((a,b)=>a+b.amt,0);
+
+  document.getElementById('acumCurrentTotal').textContent = fmt(cycleEarnings);
+  document.getElementById('acumPeriodDates').textContent  = `${fmtDateAcum(cycleStartStr)} → ${fmtDateAcum(cycleEndStr)}`;
+  document.getElementById('acumDaysLeft').textContent     = daysLeft === 1 ? '¡Mañana!' : `${daysLeft} días`;
+  document.getElementById('acumNextDate').textContent     = `Cobro: ${fmtDateAcum(nextPayStr)}`;
+  document.getElementById('acumProgressBar').style.width  = pct + '%';
+
+  // Past cycles
+  const cyclesEl = document.getElementById('acumCyclesList');
+  const cycles = [];
+  const allDates2 = state.days.map(d=>d.date).sort();
+  let cs = new Date(cycleStart); cs.setDate(cs.getDate() - 14);
+  for (let i = 0; i < 8; i++) {
+    const ce = new Date(cs); ce.setDate(ce.getDate() + 13);
+    const csStr = cs.toISOString().slice(0,10);
+    const ceStr = ce.toISOString().slice(0,10);
+    if (allDates2.length && csStr < allDates2[0]) break;
+    const cDays    = state.days.filter(d=>d.date>=csStr&&d.date<=ceStr);
+    const cBonuses = bonuses.filter(b=>b.date>=csStr&&b.date<=ceStr);
+    const earn     = cDays.reduce((a,d)=>a+d.totalEarnings,0) + cBonuses.reduce((a,b)=>a+b.amt,0);
+    const hrs      = cDays.reduce((a,d)=>a+d.totalHours,0);
+    const privs    = cDays.reduce((a,d)=>a+d.blocks.reduce((x,b)=>x+b.privates.length,0),0);
+    const tipsT    = cDays.reduce((a,d)=>a+(d.tips||0),0);
+    const bonT     = cBonuses.reduce((a,b)=>a+b.amt,0);
+    if (cDays.length || cBonuses.length) cycles.push({ csStr, ceStr, earn, hrs, privs, tipsT, bonT, days:cDays.length });
+    cs.setDate(cs.getDate() - 14);
+  }
+  cyclesEl.innerHTML = cycles.length ? cycles.map((c,i) => `
+    <div class="cycle-card">
+      <div class="cycle-card-header">
+        <div>
+          <div style="font-size:12px;color:var(--textMid)">${fmtDateAcum(c.csStr)} → ${fmtDateAcum(c.ceStr)}</div>
+          <div style="font-size:11px;color:var(--textLight);margin-top:2px">${c.days} días · ${fmtH(c.hrs)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:bold;color:var(--lilacDark)">${fmt(c.earn)}</div>
+          <span class="cycle-badge">Ciclo #${i+1}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--textMid)">
+        <span>🔒 ${c.privs} privados</span>
+        ${c.tipsT>0?`<span>💝 ${fmt(c.tipsT)} propinas</span>`:''}
+        ${c.bonT>0?`<span>🎁 ${fmt(c.bonT)} bonos</span>`:''}
+      </div>
+    </div>`).join('')
+  : '<div style="text-align:center;padding:24px;color:var(--textLight);font-size:13px">Los ciclos anteriores aparecerán aquí 🌸</div>';
+  renderBonusList();
+  updateCutDateStatus();
+}
+
+function fmtDateAcum(s) {
+  if (!s) return '';
+  const [y,m,d] = s.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function saveBonus() {
+  const amt  = parseFloat(document.getElementById('bonusAmt').value);
+  const date = document.getElementById('bonusDate').value || today();
+  const type = document.getElementById('bonusType').value;
+  const note = document.getElementById('bonusNote').value.trim();
+  if (!amt || amt <= 0) { alert('Ingresa un monto válido 🌸'); return; }
+  bonuses.unshift({ id: Date.now(), date, amt, type, note });
+  localStorage.setItem('lj_bonuses', JSON.stringify(bonuses));
+  document.getElementById('bonusAmt').value = '';
+  document.getElementById('bonusNote').value = '';
+  renderBonusList();
+  renderAcumulado();
+}
+
+function deleteBonus(id) {
+  bonuses = bonuses.filter(b => b.id !== id);
+  localStorage.setItem('lj_bonuses', JSON.stringify(bonuses));
+  renderBonusList(); renderAcumulado();
+}
+
+function renderBonusList() {
+  const el = document.getElementById('bonusList');
+  if (!el) return;
+  const typeLabels = { semanal:'🏆 Semanal', mensual:'🗓️ Mensual', meta:'🎯 Meta', especial:'⭐ Especial', diario:'📅 Diario', otro:'📌 Otro' };
+  el.innerHTML = bonuses.length ? bonuses.slice(0,20).map(b => `
+    <div class="bonus-item">
+      <div>
+        <div style="font-size:15px;font-weight:bold;color:var(--gold)">$${b.amt.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--textMid);margin-top:2px">${fmtDateAcum(b.date)}${b.note?' · '+b.note:''}</div>
+        <span class="bonus-type-badge">${typeLabels[b.type]||b.type}</span>
+      </div>
+      <button onclick="deleteBonus(${b.id})" style="background:none;border:none;color:var(--textLight);cursor:pointer;font-size:14px;padding:4px">✕</button>
+    </div>`).join('')
+  : '<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px">Sin bonos registrados aún 🌸</div>';
+}
+
+// ============================================================
+// SIMULADOR
+// ============================================================
+function initSimulador() {
+  const h = document.getElementById('simHours');
+  const p = document.getElementById('simPrivs');
+  if (h) document.getElementById('simHoursLabel').textContent = h.value + 'h por día';
+  if (p) document.getElementById('simPrivsLabel').textContent  = p.value + ' privados';
+  updateSimulator();
+}
+
+function toggleSimDay(dow) {
+  if (simSelectedDays.has(dow)) simSelectedDays.delete(dow);
+  else simSelectedDays.add(dow);
+  const btn = document.getElementById('simDay'+dow);
+  if (btn) btn.classList.toggle('sim-day-selected', simSelectedDays.has(dow));
+  updateSimulator();
+}
+
+function updateSimulator() {
+  const hoursPerDay  = parseInt(document.getElementById('simHours')?.value) || 4;
+  const privsPerSess = parseInt(document.getElementById('simPrivs')?.value) || 5;
+  const hlbl = document.getElementById('simHoursLabel');
+  const plbl = document.getElementById('simPrivsLabel');
+  if (hlbl) hlbl.textContent = hoursPerDay + 'h por día';
+  if (plbl) plbl.textContent  = privsPerSess + ' privados';
+  const stats = getStats();
+  const avgPerHour = stats?.perHour || 0;
+  const avgPerPriv = stats?.avgPerPrivate || 0;
+  const days = simSelectedDays.size || 5;
+  const earnByHour = days * hoursPerDay * avgPerHour;
+  const earnByPriv = days * privsPerSess * avgPerPriv;
+  const projection = (earnByHour + earnByPriv) / 2;
+  const projEl = document.getElementById('simProjection');
+  const subEl  = document.getElementById('simProjectionSub');
+  if (projEl) projEl.textContent = '$' + projection.toFixed(2);
+  if (subEl) subEl.textContent = stats
+    ? `${days} día${days!==1?'s':''} × ${hoursPerDay}h · $${avgPerHour.toFixed(2)}/h promedio tuyo`
+    : 'Registra sesiones para ver tu promedio real';
+  const bdEl = document.getElementById('simBreakdown');
+  if (bdEl && stats) {
+    bdEl.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-top:4px">
+      <div style="background:var(--lilacLight);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--textLight);margin-bottom:3px">Por horas</div><div style="font-weight:bold;color:var(--lilacDark)">$${earnByHour.toFixed(2)}</div></div>
+      <div style="background:var(--roseLight);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--textLight);margin-bottom:3px">Por privados</div><div style="font-weight:bold;color:var(--roseDark)">$${earnByPriv.toFixed(2)}</div></div>
+    </div>`;
+  }
+  const target  = parseFloat(document.getElementById('simTarget')?.value)   || 0;
+  const already = parseFloat(document.getElementById('simAlready')?.value) || 0;
+  const resEl   = document.getElementById('simTargetResult');
+  if (resEl && target > 0 && avgPerHour > 0) {
+    const needed = Math.max(0, target - already);
+    const hrs    = needed / avgPerHour;
+    const dNeeded = Math.ceil(hrs / hoursPerDay);
+    resEl.style.display = 'block';
+    resEl.innerHTML = needed <= 0
+      ? `✅ <strong>¡Meta alcanzada!</strong> Ya llevas $${already.toFixed(2)}.`
+      : `Necesitas <strong>${hrs.toFixed(1)}h</strong> más en vivo — aprox. <strong>${dNeeded} día${dNeeded!==1?'s':''}</strong> trabajando ${hoursPerDay}h.`;
+  } else if (resEl) resEl.style.display = 'none';
+}
+
+// ============================================================
+// FINANZAS
+// ============================================================
+function addGasto() {
+  const nombre = document.getElementById('gastoNombre').value.trim();
+  const monto  = parseFloat(document.getElementById('gastoMonto').value) || 0;
+  if (!nombre || monto <= 0) { alert('Completa nombre y monto 🌸'); return; }
+  gastos.push({ id: Date.now(), nombre, monto });
+  localStorage.setItem('lj_gastos', JSON.stringify(gastos));
+  document.getElementById('gastoNombre').value = '';
+  document.getElementById('gastoMonto').value  = '';
+  renderFinanzas();
+}
+
+function deleteGasto(id) {
+  gastos = gastos.filter(g => g.id !== id);
+  localStorage.setItem('lj_gastos', JSON.stringify(gastos));
+  renderFinanzas();
+}
+
+function renderFinanzas() {
+  const fmt = v => '$' + v.toFixed(2);
+  const gastosEl = document.getElementById('gastosList');
+  if (gastosEl) {
+    gastosEl.innerHTML = gastos.length
+      ? gastos.map(g=>`<div class="gasto-item"><span>${g.nombre}</span><span style="display:flex;align-items:center;gap:8px"><strong>$${g.monto.toFixed(2)}</strong><button class="gasto-del" onclick="deleteGasto(${g.id})">✕</button></span></div>`).join('')
+      : '<div style="font-size:12px;color:var(--textLight);padding:8px 0">Sin gastos registrados aún.</div>';
+  }
+  const totalGastos = gastos.reduce((a,g)=>a+g.monto,0);
+  const minimo = totalGastos * 1.2;
+  const now = new Date();
+  const months3 = [];
+  for (let i=0;i<3;i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const earn = state.days.filter(day=>day.date.startsWith(mk)).reduce((a,d)=>a+d.totalEarnings,0)
+               + bonuses.filter(b=>b.date.startsWith(mk)).reduce((a,b)=>a+b.amt,0);
+    months3.push(earn);
+  }
+  const validMonths = months3.filter(v=>v>0);
+  const avgMes  = validMonths.length ? validMonths.reduce((a,b)=>a+b,0)/validMonths.length : 0;
+  const ahorro  = Math.max(0, avgMes - totalGastos);
+  const tgEl = document.getElementById('finTotalGastos');
+  const minEl= document.getElementById('finMinimo');
+  const pmEl = document.getElementById('finPromedioMes');
+  const ahEl = document.getElementById('finAhorro');
+  const msgEl= document.getElementById('finMensaje');
+  if (tgEl) tgEl.textContent = fmt(totalGastos);
+  if (minEl) minEl.textContent = fmt(minimo);
+  if (pmEl) pmEl.textContent = fmt(avgMes);
+  if (ahEl) ahEl.textContent = fmt(ahorro);
+  if (msgEl) {
+    if (!state.days.length) msgEl.textContent = 'Registra tus primeras sesiones para ver el análisis financiero 🌸';
+    else if (avgMes >= minimo) msgEl.innerHTML = `✅ <strong>¡Vas bien!</strong> Tu promedio mensual cubre gastos con margen. Ahorras aprox. <strong>${fmt(ahorro)}/mes</strong>.`;
+    else if (avgMes >= totalGastos) msgEl.innerHTML = `⚠️ Cubres gastos pero el margen es ajustado. Apunta a <strong>${fmt(minimo)}</strong>/mes como mínimo cómodo.`;
+    else msgEl.innerHTML = `🔴 Tu promedio (<strong>${fmt(avgMes)}</strong>) no cubre tus gastos fijos (<strong>${fmt(totalGastos)}</strong>). Te faltan <strong>${fmt(totalGastos-avgMes)}</strong>/mes.`;
+  }
+}
+
+function calcAhorro() {
+  const para = document.getElementById('ahorroPara').value.trim() || 'tu meta';
+  const meta = parseFloat(document.getElementById('ahorroMeta').value) || 0;
+  const res  = document.getElementById('ahorroResult');
+  if (!meta || meta <= 0) { alert('Ingresa el monto objetivo 🌸'); return; }
+  const totalGastos = gastos.reduce((a,g)=>a+g.monto,0);
+  const now = new Date();
+  let totalEarn = 0, mesesCont = 0;
+  for (let i=0;i<3;i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const e = state.days.filter(day=>day.date.startsWith(mk)).reduce((a,d)=>a+d.totalEarnings,0);
+    if (e>0) { totalEarn += e; mesesCont++; }
+  }
+  const avgMes   = mesesCont ? totalEarn/mesesCont : 0;
+  const ahorroMes= Math.max(0, avgMes - totalGastos);
+  res.style.display = 'block';
+  if (ahorroMes <= 0) {
+    res.innerHTML = '⚠️ Con tus gastos actuales no queda margen de ahorro. Ajusta gastos o aumenta ingresos.';
+  } else {
+    const meses = Math.ceil(meta / ahorroMes);
+    const fecha = new Date(); fecha.setMonth(fecha.getMonth() + meses);
+    const mesLabel = fecha.toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+    res.innerHTML = `🎯 Ahorrando <strong>$${ahorroMes.toFixed(2)}/mes</strong> llegarás a tu meta de <strong>${para}</strong> en <strong>${meses} mes${meses!==1?'es':''}</strong> — alrededor de <strong>${mesLabel}</strong> ✨`;
+  }
+}
+
+// ============================================================
+// AGENDA / CALENDARIO
+// ============================================================
+function renderCalAgenda() {
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const titleEl = document.getElementById('calAgendaTitle');
+  if (titleEl) titleEl.textContent = `${months[calAgendaMonth]} ${calAgendaYear}`;
+  const firstDay = new Date(calAgendaYear, calAgendaMonth, 1);
+  const lastDay  = new Date(calAgendaYear, calAgendaMonth+1, 0);
+  const todayStr = today();
+  let startDow = firstDay.getDay() - 1; if (startDow < 0) startDow = 6;
+  const grid = document.getElementById('calAgendaGrid');
+  if (!grid) return;
+  let html = '';
+  for (let i = 0; i < startDow; i++) html += '<div></div>';
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const ds  = `${calAgendaYear}-${String(calAgendaMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isReg = state.days.some(d=>d.date===ds);
+    const est   = isReg ? 'registrado' : agenda[ds];
+    const isToday = ds === todayStr;
+    const isSel   = agendaSelectedCells.has(ds);
+    const icons = { disponible:'✅', comprometido:'❌', descanso:'😴', registrado:'🌸' };
+    html += `<div class="cal-agenda-cell${est?' estado-'+est:''}${isToday?' today-cell':''}${isSel?' selected':''}" onclick="toggleAgendaCell('${ds}')">
+      <div class="cal-agenda-daynum">${day}</div>
+      <div class="cal-agenda-dot">${icons[est]||''}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  renderAgendaStats();
+}
+
+function toggleAgendaCell(ds) {
+  if (agendaSelectedCells.has(ds)) agendaSelectedCells.delete(ds);
+  else agendaSelectedCells.add(ds);
+  renderCalAgenda();
+}
+
+function markAgendaDays(status) {
+  agendaSelectedCells.forEach(ds => {
+    if (status === null) delete agenda[ds];
+    else agenda[ds] = status;
+  });
+  localStorage.setItem('lj_agenda', JSON.stringify(agenda));
+  agendaSelectedCells.clear();
+  renderCalAgenda();
+}
+
+function calAgendaPrev() { calAgendaMonth--; if(calAgendaMonth<0){calAgendaMonth=11;calAgendaYear--;} agendaSelectedCells.clear(); renderCalAgenda(); }
+function calAgendaNext() { calAgendaMonth++; if(calAgendaMonth>11){calAgendaMonth=0;calAgendaYear++;} agendaSelectedCells.clear(); renderCalAgenda(); }
+
+function renderAgendaStats() {
+  const el = document.getElementById('calAgendaStats');
+  if (!el) return;
+  const mk = `${calAgendaYear}-${String(calAgendaMonth+1).padStart(2,'0')}`;
+  const lastDay = new Date(calAgendaYear, calAgendaMonth+1, 0).getDate();
+  let disponibles=0, comprometidos=0, descansos=0, registrados=0;
+  for (let d=1; d<=lastDay; d++) {
+    const ds  = `${mk}-${String(d).padStart(2,'0')}`;
+    const isReg = state.days.some(day=>day.date===ds);
+    const est   = isReg ? 'registrado' : agenda[ds];
+    if (est==='disponible') disponibles++;
+    else if (est==='comprometido') comprometidos++;
+    else if (est==='descanso') descansos++;
+    else if (est==='registrado') registrados++;
+  }
+  const stats = getStats();
+  const todayStr = today();
+  const remaining = [...Array(lastDay)].filter((_,i)=>{
+    const ds = `${mk}-${String(i+1).padStart(2,'0')}`;
+    return agenda[ds]==='disponible' && ds > todayStr;
+  }).length;
+  const avgDay = state.days.length ? state.days.reduce((a,d)=>a+d.totalEarnings,0)/state.days.length : 0;
+  el.innerHTML = `
+    <div style="font-size:10px;letter-spacing:2px;color:var(--textLight);text-transform:uppercase;margin-bottom:12px">Resumen del mes</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:11px">
+      <div style="background:var(--greenLight);border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:bold;color:var(--green)">${disponibles}</div><div style="color:var(--textMid)">Disponibles</div></div>
+      <div style="background:var(--goldLight);border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:bold;color:var(--gold)">${registrados}</div><div style="color:var(--textMid)">Trabajados</div></div>
+      <div style="background:var(--roseLight);border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:bold;color:var(--roseDark)">${comprometidos}</div><div style="color:var(--textMid)">Comprom.</div></div>
+      <div style="background:var(--lilacLight);border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:bold;color:var(--lilacDark)">${descansos}</div><div style="color:var(--textMid)">Descanso</div></div>
+    </div>
+    ${remaining > 0 && avgDay > 0 ? `<div style="margin-top:10px;font-size:12px;color:var(--textMid);padding:8px;background:var(--bg);border-radius:8px">
+      💡 Tienes <strong>${remaining} días disponibles</strong> restantes. Con tu promedio podrías ganar aprox. <strong>$${(remaining*avgDay).toFixed(2)}</strong> adicionales.
+    </div>` : ''}`;
+}
+
+// Init bonus date and finanzas on load
+document.addEventListener('DOMContentLoaded', () => {
+  const bd = document.getElementById('bonusDate');
+  if (bd) bd.value = today();
+  // Pre-load finanzas data if tab is opened
 });
 </script>
 </body>
