@@ -842,17 +842,10 @@
           <button class="period-gran-btn"         id="pg-month"  onclick="setHistPeriod('month')">Mes</button>
           <button class="period-gran-btn"         id="pg-3month" onclick="setHistPeriod('3month')">3 Meses</button>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="chart-toggle-group" style="margin:0">
-            <button class="chart-toggle active" id="pm-both"     onclick="setPeriodMetric('both')">Ambos</button>
-            <button class="chart-toggle"        id="pm-earnings" onclick="setPeriodMetric('earnings')">💰</button>
-            <button class="chart-toggle"        id="pm-hours"    onclick="setPeriodMetric('hours')">⏱️</button>
-          </div>
-          <div class="period-arrow-group">
-            <button class="period-arrow" id="periodPrev" onclick="shiftHistPeriod(-1)">‹</button>
-            <div class="period-label" id="periodLabel">—</div>
-            <button class="period-arrow" id="periodNext" onclick="shiftHistPeriod(1)">›</button>
-          </div>
+        <div class="period-arrow-group">
+          <button class="period-arrow" id="periodPrev" onclick="shiftHistPeriod(-1)">‹</button>
+          <div class="period-label" id="periodLabel">—</div>
+          <button class="period-arrow" id="periodNext" onclick="shiftHistPeriod(1)">›</button>
         </div>
       </div>
       <div class="period-stats-row">
@@ -875,29 +868,7 @@
       </div>
       <div id="pvEmpty" class="period-empty" style="display:none">Sin datos para este período 🌸</div>
       <canvas id="periodChart" height="140" style="display:none"></canvas>
-      <div id="pvLegend" style="display:none;margin-top:10px;gap:14px;flex-wrap:wrap">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45)"><span style="display:inline-block;width:10px;height:10px;background:rgba(195,180,212,0.85);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Ingresos ($)</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.45)"><span style="display:inline-block;width:10px;height:10px;background:rgba(212,165,176,0.8);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Horas</span>
-      </div>
     </div>
-    <!-- Weekly chart -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase">📆 Histórico semanal</div>
-        <div class="chart-toggle-group">
-          <button class="chart-toggle active" onclick="setWeekMetric('both')" id="wm-both">Ambos</button>
-          <button class="chart-toggle" onclick="setWeekMetric('earnings')" id="wm-earnings">💰</button>
-          <button class="chart-toggle" onclick="setWeekMetric('hours')" id="wm-hours">⏱️</button>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--textLight);margin-bottom:8px" id="weekChartSub"></div>
-      <canvas id="weekChart" height="180"></canvas>
-      <div class="chart-legend" id="weekChartLegend">
-        <span style="color:var(--lilacDark)">■ Ingresos ($)</span>
-        <span style="color:var(--roseDark)">■ Horas</span>
-      </div>
-    </div>
-
     <!-- Monthly chart -->
     <div class="chart-card">
       <div class="chart-header">
@@ -1059,7 +1030,6 @@ let state = {
 let weekChart = null, monthChart = null, hourChart = null, dayChart = null, domChart = null, periodChart = null;
 let histViewPeriod = 'week'; // 'week' | 'month' | '3month'
 let histViewOffset = 0;      // 0 = actual, -1 = anterior, etc.
-let periodMetric   = 'both'; // 'both' | 'earnings' | 'hours'
 let expandedDay = null, expandedBlock = null, expandedMonth = null;
 let addingPrivateTo = null;
 let editingEndTime = null;
@@ -1592,14 +1562,6 @@ function setHistPeriod(p) {
   renderPeriodNav();
 }
 
-function setPeriodMetric(m) {
-  periodMetric = m;
-  ['both','earnings','hours'].forEach(k => {
-    document.getElementById('pm-'+k).className = 'chart-toggle' + (k===m?' active':'');
-  });
-  renderPeriodNav();
-}
-
 function shiftHistPeriod(dir) {
   histViewOffset += dir;
   // No ir más allá del período actual
@@ -1650,9 +1612,11 @@ function getHistViewRange() {
 function renderPeriodNav() {
   const { from, to, label } = getHistViewRange();
 
+  // Actualizar label y botón siguiente
   document.getElementById('periodLabel').textContent = label;
   document.getElementById('periodNext').disabled = histViewOffset >= 0;
 
+  // Filtrar días en el rango
   const inRange = state.days.filter(d => {
     const dt = new Date(d.date + 'T12:00:00');
     return dt >= from && dt <= to;
@@ -1667,13 +1631,11 @@ function renderPeriodNav() {
   document.getElementById('pvPrivs').textContent    = totalPrivs;
   document.getElementById('pvDays').textContent     = inRange.length;
 
-  const canvas = document.getElementById('periodChart');
-  const empty  = document.getElementById('pvEmpty');
-  const legend = document.getElementById('pvLegend');
+  const canvas  = document.getElementById('periodChart');
+  const empty   = document.getElementById('pvEmpty');
 
   if (!inRange.length) {
     canvas.style.display = 'none';
-    legend.style.display = 'none';
     empty.style.display  = 'block';
     if (periodChart) { periodChart.destroy(); periodChart = null; }
     return;
@@ -1682,29 +1644,27 @@ function renderPeriodNav() {
   canvas.style.display = 'block';
 
   // Construir barras según granularidad
-  let labels = [], dataEarn = [], dataHours = [], barWeekends = [];
+  let labels = [], data = [];
 
   if (histViewPeriod === 'week') {
+    // 7 barras: Lun a Dom
     for (let i = 0; i < 7; i++) {
       const d = new Date(from); d.setDate(from.getDate() + i);
       const key = d.toISOString().slice(0,10);
       const day = inRange.find(x => x.date === key);
       labels.push(DAYS_ES[d.getDay()]);
-      dataEarn.push(day ? +day.totalEarnings.toFixed(2) : 0);
-      dataHours.push(day ? +day.totalHours.toFixed(1) : 0);
-      barWeekends.push(d.getDay() === 0 || d.getDay() === 6);
+      data.push(day ? +day.totalEarnings.toFixed(2) : 0);
     }
 
   } else if (histViewPeriod === 'month') {
+    // Una barra por día del mes que tenga datos
     inRange.sort((a,b) => a.date.localeCompare(b.date)).forEach(d => {
       labels.push(parseInt(d.date.slice(8)));
-      dataEarn.push(+d.totalEarnings.toFixed(2));
-      dataHours.push(+d.totalHours.toFixed(1));
-      const dow = new Date(d.date + 'T12:00:00').getDay();
-      barWeekends.push(dow === 0 || dow === 6);
+      data.push(+d.totalEarnings.toFixed(2));
     });
 
-  } else { // 3month — barras por semana, sin distinción fin de semana
+  } else { // 3month
+    // Una barra por semana
     const cur = new Date(from);
     while (cur <= to) {
       const wEnd = new Date(cur); wEnd.setDate(cur.getDate() + 6);
@@ -1713,63 +1673,34 @@ function renderPeriodNav() {
         return dt >= cur && dt <= wEnd;
       });
       if (wDays.length) {
+        const earn = wDays.reduce((a,d) => a + d.totalEarnings, 0);
         labels.push(`${cur.getDate()}/${cur.getMonth()+1}`);
-        dataEarn.push(+wDays.reduce((a,d) => a + d.totalEarnings, 0).toFixed(2));
-        dataHours.push(+wDays.reduce((a,d) => a + d.totalHours, 0).toFixed(1));
-        barWeekends.push(false);
+        data.push(+earn.toFixed(2));
       }
       cur.setDate(cur.getDate() + 7);
     }
   }
 
-  const m = periodMetric;
-
-  // Colores con fin de semana para ingresos
-  const maxEarn = Math.max(...dataEarn, 0.01);
-  const earnColors = dataEarn.map((v, i) => {
-    if (barWeekends[i])            return v > 0 ? 'rgba(255,160,120,0.9)' : 'rgba(255,160,120,0.2)';
-    if (v === maxEarn && v > 0)    return 'rgba(106,180,140,0.9)';
-    return v > 0 ? 'rgba(195,180,212,0.75)' : 'rgba(255,255,255,0.06)';
-  });
-
-  const datasets = [];
-  if (m === 'earnings' || m === 'both') datasets.push({
-    label: 'Ingresos',
-    data: dataEarn,
-    backgroundColor: earnColors,
-    borderRadius: 5,
-    borderSkipped: false,
-    yAxisID: 'y'
-  });
-  if (m === 'hours' || m === 'both') datasets.push({
-    label: 'Horas',
-    data: dataHours,
-    backgroundColor: dataHours.map((v, i) => barWeekends[i] ? 'rgba(255,160,120,0.55)' : 'rgba(212,165,176,0.7)'),
-    borderRadius: 5,
-    borderSkipped: false,
-    yAxisID: m === 'both' ? 'y2' : 'y'
-  });
-
-  // Leyenda
-  legend.style.display = m === 'both' ? 'flex' : 'none';
-
-  const scales = {
-    x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } } },
-    y: { position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, callback: v => m === 'hours' ? `${v}h` : `$${v}` } }
-  };
-  if (m === 'both') scales.y2 = { position: 'right', grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, callback: v => `${v}h` } };
+  const maxVal = Math.max(...data, 0.01);
+  const colors = data.map(v => v === maxVal && v > 0
+    ? 'rgba(106,180,140,0.9)'
+    : v > 0 ? 'rgba(195,180,212,0.75)' : 'rgba(255,255,255,0.06)'
+  );
 
   if (periodChart) periodChart.destroy();
   periodChart = new Chart(canvas, {
     type: 'bar',
-    data: { labels, datasets },
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 5, borderSkipped: false }] },
     options: {
       responsive: true,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => c.dataset.label === 'Ingresos' ? `Ganancias: ${fmt(c.raw)}` : `Horas: ${fmtH(c.raw)}` } }
+        tooltip: { callbacks: { label: c => `Ganancias: ${fmt(c.raw)}` } }
       },
-      scales
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, callback: v => `$${v}` } }
+      }
     }
   });
 }
