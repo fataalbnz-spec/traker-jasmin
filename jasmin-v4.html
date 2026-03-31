@@ -341,7 +341,9 @@
   /* ── LIVE PRIVADOS ── */
   .live-privs-section { margin-top: 12px; border-top: 1px solid rgba(195,180,212,0.25); padding-top: 12px; }
   .live-privs-title { font-size: 9px; letter-spacing: 3px; color: rgba(195,180,212,0.8); text-transform: uppercase; margin-bottom: 10px; }
-  .live-priv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .live-priv-add-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .live-priv-add-fields { display: flex; gap: 8px; align-items: center; }
+  .live-priv-select { background: rgba(255,255,255,0.08); border: 1px solid rgba(195,180,212,0.3); border-radius: 10px; padding: 9px 10px; color: #fff; font-size: 13px; font-family: Palatino, Georgia, serif; flex: 1; min-width: 0; }
   .live-priv-input { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(195,180,212,0.3); border-radius: 10px; padding: 9px 12px; color: #fff; font-size: 14px; font-family: Palatino, Georgia, serif; }
   .live-priv-input::placeholder { color: rgba(255,255,255,0.3); }
   .live-priv-input:focus { outline: none; border-color: var(--lilac); background: rgba(255,255,255,0.12); }
@@ -511,8 +513,12 @@
   <div class="live-privs-section">
     <div class="live-privs-title">🔒 Registrar privado</div>
     <div class="live-priv-add-row">
-      <input type="number" class="live-priv-input" id="livePrivAmt" placeholder="Monto en $..." step="0.01" min="0" onkeydown="if(event.key==='Enter')addLivePrivate()">
-      <button class="live-priv-save-btn" onclick="addLivePrivate()">+ Agregar</button>
+      <div class="live-priv-add-fields">
+        <select class="live-priv-select" id="livePrivStartTime" title="Hora de inicio del privado"></select>
+        <input type="number" class="live-priv-input" id="livePrivDur" placeholder="Duración (min)" step="1" min="1" max="300" style="width:110px;flex:none" title="Cuántos minutos duró">
+        <input type="number" class="live-priv-input" id="livePrivAmt" placeholder="$ monto" step="0.01" min="0" onkeydown="if(event.key==='Enter')addLivePrivate()" style="flex:1">
+      </div>
+      <button class="live-priv-save-btn" onclick="addLivePrivate()" style="width:100%">+ Agregar privado</button>
     </div>
     <div class="live-priv-list" id="livePrivList">
       <span class="live-priv-empty">Ningún privado aún</span>
@@ -1855,15 +1861,18 @@ function renderSessions() {
 
       const privatesHtml = isBlockExpanded && block.privates.length>0 ? `
         <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
-          ${block.privates.map((p,pi)=>`
+          ${block.privates.map((p,pi)=>{
+            const endStr = (p.endH != null && p.duration) ? ` → ${fmtTime(p.endH, p.endM)}` : '';
+            const durStr = p.duration ? ` · ${p.duration}min` : '';
+            return `
             <div class="private-row">
-              <span style="color:var(--textMid);font-size:13px">${fmtTime(p.h,p.m)}</span>
+              <span style="color:var(--textMid);font-size:13px">${fmtTime(p.h,p.m)}${endStr}${durStr}</span>
               <div style="display:flex;align-items:center;gap:10px">
                 <span style="color:var(--lilacDark);font-size:13px;font-weight:bold">${fmt(p.amount)}</span>
                 ${confirmDeleteBtn(`deletePrivate(${day.id},${block.id},${pi})`,'','✕',true)}
               </div>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
         </div>
       ` : '';
 
@@ -2170,8 +2179,29 @@ function startLive() {
   startSel.value = closest.value;
   onDateChange();
 
+  populateLivePrivStartSelect();
+
   liveInterval = setInterval(updateLiveDisplay, 1000);
   updateLiveDisplay();
+}
+
+function populateLivePrivStartSelect() {
+  const sel = document.getElementById('livePrivStartTime');
+  if (!sel) return;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  sel.innerHTML = TIME_SLOTS.map(({h, m, value}) => {
+    const slotMins = h * 60 + m;
+    // Pre-seleccionar la hora actual (o más cercana por debajo)
+    return `<option value="${value}">${fmtTime(h, m)}</option>`;
+  }).join('');
+  // Seleccionar el slot más cercano a la hora actual
+  const closest = TIME_SLOTS.reduce((best, slot) => {
+    const slotMins = slot.h * 60 + slot.m;
+    const bestMins = best.h * 60 + best.m;
+    return Math.abs(slotMins - nowMins) < Math.abs(bestMins - nowMins) ? slot : best;
+  });
+  sel.value = closest.value;
 }
 
 function updateLiveDisplay() {
@@ -2185,13 +2215,44 @@ function updateLiveDisplay() {
 }
 
 function addLivePrivate() {
-  const input = document.getElementById('livePrivAmt');
-  const amt = parseFloat(input.value);
-  if (!amt || amt <= 0) { input.focus(); return; }
-  const now = new Date();
-  livePrivatesQueue.push({ h: now.getHours(), m: now.getMinutes(), amount: amt, id: Date.now() });
-  input.value = '';
-  input.focus();
+  const amtInput  = document.getElementById('livePrivAmt');
+  const durInput  = document.getElementById('livePrivDur');
+  const selStart  = document.getElementById('livePrivStartTime');
+  const amt = parseFloat(amtInput.value);
+  if (!amt || amt <= 0) { amtInput.focus(); return; }
+
+  // Hora de inicio: lo que eligió la usuaria (o la hora actual si no hay select)
+  let startH, startM;
+  if (selStart && selStart.value) {
+    const parsed = parseTimeVal(selStart.value);
+    startH = parsed.h; startM = parsed.m;
+  } else {
+    const now = new Date();
+    startH = now.getHours(); startM = now.getMinutes();
+  }
+
+  // Duración en minutos
+  const durMins = parseInt(durInput.value) || 0;
+
+  // Hora de fin = inicio + duración
+  let endH = startH, endM = startM;
+  if (durMins > 0) {
+    const totalMins = startH * 60 + startM + durMins;
+    endH = Math.floor(totalMins / 60) % 24;
+    endM = totalMins % 60;
+  }
+
+  livePrivatesQueue.push({
+    h: startH, m: startM,         // hora de inicio
+    endH, endM,                    // hora de fin
+    duration: durMins || null,     // duración en minutos
+    amount: amt,
+    id: Date.now()
+  });
+
+  amtInput.value  = '';
+  durInput.value  = '';
+  amtInput.focus();
   localStorage.setItem('lj_live_privates', JSON.stringify(livePrivatesQueue));
   renderLivePrivList();
 }
@@ -2223,12 +2284,15 @@ function renderLivePrivList() {
     list.innerHTML = '<span class="live-priv-empty">Ningún privado aún</span>';
     return;
   }
-  list.innerHTML = livePrivatesQueue.map(p =>
-    `<div class="live-priv-chip">
-      ${fmtTime(p.h,p.m)} · ${fmt(p.amount)}
+  list.innerHTML = livePrivatesQueue.map(p => {
+    const startStr = fmtTime(p.h, p.m);
+    const endStr   = (p.endH != null && p.duration) ? ` → ${fmtTime(p.endH, p.endM)}` : '';
+    const durStr   = p.duration ? ` · ${p.duration}min` : '';
+    return `<div class="live-priv-chip">
+      ${startStr}${endStr}${durStr} · ${fmt(p.amount)}
       <button class="live-priv-chip-del" onclick="removeLivePrivate(${p.id})">✕</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 function updateSaveBlockBtnLabel() {
@@ -2741,6 +2805,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
       liveInterval = setInterval(updateLiveDisplay, 1000);
       updateLiveDisplay();
       renderLivePrivList();
+      populateLivePrivStartSelect();
     }
   } catch(e) { localStorage.removeItem('lj_live_start'); localStorage.removeItem('lj_live_privates'); }
 });
