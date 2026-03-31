@@ -200,6 +200,27 @@
   .existing-block-row:last-child { border-bottom: none; }
 
   /* Day card (historial) */
+  /* ── MONTH GROUP ── */
+  .month-group { margin-bottom: 14px; }
+  .month-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, var(--lilacLight), var(--roseLight));
+    border: 1px solid var(--lilac); border-radius: 14px;
+    padding: 14px 16px; cursor: pointer; user-select: none;
+    transition: all 0.2s;
+  }
+  .month-header:hover { border-color: var(--lilacDark); box-shadow: 0 2px 12px rgba(195,180,212,0.25); }
+  .month-header.open { border-radius: 14px 14px 0 0; }
+  .month-title { font-size: 15px; font-weight: bold; color: var(--lilacDark); letter-spacing: 0.5px; }
+  .month-meta { font-size: 11px; color: var(--textMid); margin-top: 3px; letter-spacing: 0.5px; }
+  .month-right { text-align: right; }
+  .month-earn { font-size: 20px; font-weight: bold; color: var(--lilacDark); }
+  .month-earn-sub { font-size: 11px; color: var(--textLight); }
+  .month-chevron { font-size: 11px; color: var(--textLight); margin-top: 4px; }
+  .month-body {
+    background: var(--bgCard); border: 1px solid var(--lilac); border-top: none;
+    border-radius: 0 0 14px 14px; padding: 12px 10px 10px;
+  }
   .day-card { background: var(--bgCard); border: 1px solid var(--borderLight); border-radius: 16px; padding: 16px 14px; box-shadow: 0 2px 12px rgba(195,180,212,0.08); margin-bottom: 12px; }
   .day-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .day-title { color: var(--text); font-size: 16px; font-weight: bold; }
@@ -837,6 +858,18 @@
       <div id="annualContent"></div>
     </div>
 
+    <!-- Day of month chart -->
+    <div class="chart-card" id="domChartCard">
+      <div class="chart-header">
+        <div style="font-size:10px;letter-spacing:3px;color:var(--green);text-transform:uppercase">📅 Promedio por día del mes</div>
+      </div>
+      <div style="font-size:11px;color:var(--textLight);margin-bottom:8px" id="domChartSub"></div>
+      <canvas id="domChart" height="180"></canvas>
+      <div style="font-size:11px;color:var(--textLight);margin-top:10px;line-height:1.6">
+        💡 Los días más altos son tus mejores momentos del mes. Úsalo para planear cuándo conectarte más.
+      </div>
+    </div>
+
     <div class="tip-box">
       💡 <strong>Para planear vacaciones:</strong> mira los meses con menos ingresos — esos son tus mejores momentos para descansar. Los datos se acumulan año tras año automáticamente.
     </div>
@@ -959,8 +992,8 @@ let state = {
   selectedYear: null,
 };
 
-let weekChart = null, monthChart = null, hourChart = null, dayChart = null;
-let expandedDay = null, expandedBlock = null;
+let weekChart = null, monthChart = null, hourChart = null, dayChart = null, domChart = null;
+let expandedDay = null, expandedBlock = null, expandedMonth = null;
 let addingPrivateTo = null;
 let editingEndTime = null;
 let confirmDeleteState = {};
@@ -1492,6 +1525,7 @@ function renderHistorico() {
   renderWeekChart();
   renderMonthChart();
   renderAnnualSummary();
+  renderDomChart();
 }
 
 function renderWeekChart() {
@@ -1591,8 +1625,87 @@ function renderAnnualSummary() {
 }
 
 // ============================================================
-// RENDER ADD FORM
+// DAY-OF-MONTH CHART
 // ============================================================
+function renderDomChart() {
+  if (!state.days.length) return;
+
+  // Agrupar por día del mes (1–31): promedio de ganancias
+  const byDom = {}; // { 1: {total, count}, ... }
+  state.days.forEach(day => {
+    const dom = parseInt(day.date.slice(8)); // día del mes
+    if (!byDom[dom]) byDom[dom] = { total: 0, count: 0 };
+    byDom[dom].total += day.totalEarnings;
+    byDom[dom].count++;
+  });
+
+  // Construir array de los días que realmente tienen datos
+  const domData = [];
+  for (let d = 1; d <= 31; d++) {
+    if (byDom[d]) {
+      domData.push({
+        day: d,
+        avg: byDom[d].total / byDom[d].count,
+        count: byDom[d].count
+      });
+    }
+  }
+
+  if (!domData.length) return;
+
+  const maxAvg = Math.max(...domData.map(d => d.avg));
+  // Top 3 días para highlight
+  const sorted = [...domData].sort((a,b) => b.avg - a.avg);
+  const top3 = new Set(sorted.slice(0,3).map(d => d.day));
+
+  const colors = domData.map(d => {
+    if (d.day === sorted[0].day) return 'rgba(106,180,140,0.9)';   // verde fuerte: el mejor
+    if (top3.has(d.day))         return 'rgba(195,180,212,0.85)';  // lila: top 2 y 3
+    return 'rgba(232,221,208,0.75)';                                 // neutro: el resto
+  });
+
+  document.getElementById('domChartSub').textContent =
+    `Promedio de ganancias · días registrados: ${domData.length} · 🟢 mejor día del mes`;
+
+  if (domChart) domChart.destroy();
+  domChart = new Chart(document.getElementById('domChart'), {
+    type: 'bar',
+    data: {
+      labels: domData.map(d => d.day),
+      datasets: [{
+        data: domData.map(d => +d.avg.toFixed(2)),
+        backgroundColor: colors,
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => `Día ${items[0].label} del mes`,
+            label: c => {
+              const entry = domData[c.dataIndex];
+              return [`Promedio: ${fmt(c.raw)}`, `Registrado ${entry.count} vez${entry.count!==1?'es':''}`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#b8a898', font: { size: 9 } }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { color: '#b8a898', font: { size: 9 }, callback: v => `$${v}` }
+        }
+      }
+    }
+  });
+}
 function initAddForm() {
   // Populate time slots
   const startSel = document.getElementById('startTime');
@@ -1771,6 +1884,8 @@ function saveBlock() {
 // ============================================================
 // RENDER SESSIONS
 // ============================================================
+const MONTHS_FULL_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
 function renderSessions() {
   const count = document.getElementById('sessionCount');
   count.textContent = `${state.days.length} días registrados`;
@@ -1782,128 +1897,172 @@ function renderSessions() {
   }
   document.getElementById('sessionEmpty').style.display = 'none';
 
+  // Agrupar días por mes (YYYY-MM)
+  const byMonth = {};
+  state.days.forEach(day => {
+    const key = getMonthKey(new Date(day.date + 'T12:00:00'));
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(day);
+  });
+
+  // Ordenar meses de más reciente a más antiguo
+  const monthKeys = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+
+  // Auto-expandir el mes más reciente si no hay ninguno abierto
+  if (!expandedMonth && monthKeys.length) expandedMonth = monthKeys[0];
+
   const list = document.getElementById('sessionList');
-  list.innerHTML = state.days.map(day=>{
-    const isExpanded = expandedDay === day.id;
-    const actTags = [
-      day.activity?.gym ? '<span class="tag tag-lilac">💪 gym</span>' : '',
-      day.activity?.stretch ? '<span class="tag tag-lilac">🧘‍♀️</span>' : '',
-      day.activity?.park ? '<span class="tag tag-lilac">🐾 parque</span>' : '',
-      day.period ? `<span class="tag tag-rose">🌸 ${PERIOD_LABELS[day.periodIntensity||0]}</span>` : '',
-      (day.mobileHours||0)>0 ? `<span class="tag tag-mobile">📱 ${fmtH(day.mobileHours)}</span>` : '',
-    ].filter(Boolean).join('');
+  list.innerHTML = monthKeys.map(mk => {
+    const [year, month] = mk.split('-').map(Number);
+    const monthName = MONTHS_FULL_ES[month - 1];
+    const days = byMonth[mk];
+    const isOpen = expandedMonth === mk;
 
-    const blocksHtml = isExpanded ? day.blocks.map(block=>{
-      const st=parseTimeVal(block.startTime), et=parseTimeVal(block.endTime);
-      const blockEarn = block.privates.reduce((a,p)=>a+p.amount,0);
-      const isEditingThis = editingEndTime === block.id;
-      const isAddingHere = addingPrivateTo?.blockId===block.id;
-      const isBlockExpanded = expandedBlock===block.id;
+    // Totales del mes
+    const totalEarnings = days.reduce((a,d) => a + d.totalEarnings, 0);
+    const totalHours = days.reduce((a,d) => a + d.totalHours, 0);
+    const totalPrivs = days.reduce((a,d) => a + d.blocks.reduce((x,b) => x + b.privates.length, 0), 0);
+    const daysCount = days.length;
 
-      const editEndHtml = isEditingThis ? `
-        <div class="edit-endtime">
-          <div class="edit-endtime-title">Modificar hora de salida</div>
-          <div class="edit-endtime-row">
-            <div style="flex:1">
-              <select class="form-input" onchange="updateBlockEndTime(${day.id},${block.id},this.value)">
-                ${TIME_SLOTS.map(({h,m,value})=>`<option value="${value}" ${block.endTime===value?'selected':''}>${fmtTime(h,m)}</option>`).join('')}
-              </select>
-            </div>
-            <button onclick="editingEndTime=null;renderSessions()" style="padding:11px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bgCard);color:var(--textMid);font-size:12px;cursor:pointer;font-family:inherit">Cerrar</button>
-          </div>
-          <div style="font-size:11px;color:var(--green);margin-top:8px">Se guarda automáticamente al seleccionar.</div>
-        </div>
-      ` : '';
+    // Contenido de días (solo si abierto)
+    const daysHtml = isOpen ? days.map(day => {
+      const isExpanded = expandedDay === day.id;
+      const actTags = [
+        day.activity?.gym ? '<span class="tag tag-lilac">💪 gym</span>' : '',
+        day.activity?.stretch ? '<span class="tag tag-lilac">🧘‍♀️</span>' : '',
+        day.activity?.park ? '<span class="tag tag-lilac">🐾 parque</span>' : '',
+        day.period ? `<span class="tag tag-rose">🌸 ${PERIOD_LABELS[day.periodIntensity||0]}</span>` : '',
+        (day.mobileHours||0)>0 ? `<span class="tag tag-mobile">📱 ${fmtH(day.mobileHours)}</span>` : '',
+      ].filter(Boolean).join('');
 
-      const privatesHtml = isBlockExpanded && block.privates.length>0 ? `
-        <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
-          ${block.privates.map((p,pi)=>{
-            const endStr = (p.endH != null && p.duration) ? ` → ${fmtTime(p.endH, p.endM)}` : '';
-            const durStr = p.duration ? ` · ${p.duration}min` : '';
-            return `
-            <div class="private-row">
-              <span style="color:var(--textMid);font-size:13px">${fmtTime(p.h,p.m)}${endStr}${durStr}</span>
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="color:var(--lilacDark);font-size:13px;font-weight:bold">${fmt(p.amount)}</span>
-                ${confirmDeleteBtn(`deletePrivate(${day.id},${block.id},${pi})`,'','✕',true)}
+      const blocksHtml = isExpanded ? day.blocks.map(block=>{
+        const st=parseTimeVal(block.startTime), et=parseTimeVal(block.endTime);
+        const blockEarn = block.privates.reduce((a,p)=>a+p.amount,0);
+        const isEditingThis = editingEndTime === block.id;
+        const isAddingHere = addingPrivateTo?.blockId===block.id;
+        const isBlockExpanded = expandedBlock===block.id;
+
+        const editEndHtml = isEditingThis ? `
+          <div class="edit-endtime">
+            <div class="edit-endtime-title">Modificar hora de salida</div>
+            <div class="edit-endtime-row">
+              <div style="flex:1">
+                <select class="form-input" onchange="updateBlockEndTime(${day.id},${block.id},this.value)">
+                  ${TIME_SLOTS.map(({h,m,value})=>`<option value="${value}" ${block.endTime===value?'selected':''}>${fmtTime(h,m)}</option>`).join('')}
+                </select>
               </div>
-            </div>`;
-          }).join('')}
-        </div>
-      ` : '';
-
-      const addPrivateHtml = isAddingHere ? `
-        <div class="add-private-form">
-          <div class="add-private-grid">
-            <div>
-              <label class="form-label">Hora</label>
-              <select class="form-input" id="newPrivTime_${block.id}">
-                ${TIME_SLOTS.map(({h,m,value})=>`<option value="${value}" ${block.startTime===value?'selected':''}>${fmtTime(h,m)}</option>`).join('')}
-              </select>
+              <button onclick="editingEndTime=null;renderSessions()" style="padding:11px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bgCard);color:var(--textMid);font-size:12px;cursor:pointer;font-family:inherit">Cerrar</button>
             </div>
-            <div>
-              <label class="form-label">$ Ganado</label>
-              <input type="number" class="form-input" id="newPrivAmt_${block.id}" placeholder="0.00">
+            <div style="font-size:11px;color:var(--green);margin-top:8px">Se guarda automáticamente al seleccionar.</div>
+          </div>
+        ` : '';
+
+        const privatesHtml = isBlockExpanded && block.privates.length>0 ? `
+          <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+            ${block.privates.map((p,pi)=>{
+              const endStr = (p.endH != null && p.duration) ? ` → ${fmtTime(p.endH, p.endM)}` : '';
+              const durStr = p.duration ? ` · ${p.duration}min` : '';
+              return `
+              <div class="private-row">
+                <span style="color:var(--textMid);font-size:13px">${fmtTime(p.h,p.m)}${endStr}${durStr}</span>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="color:var(--lilacDark);font-size:13px;font-weight:bold">${fmt(p.amount)}</span>
+                  ${confirmDeleteBtn(`deletePrivate(${day.id},${block.id},${pi})`,'','✕',true)}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        ` : '';
+
+        const addPrivateHtml = isAddingHere ? `
+          <div class="add-private-form">
+            <div class="add-private-grid">
+              <div>
+                <label class="form-label">Hora</label>
+                <select class="form-input" id="newPrivTime_${block.id}">
+                  ${TIME_SLOTS.map(({h,m,value})=>`<option value="${value}" ${block.startTime===value?'selected':''}>${fmtTime(h,m)}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="form-label">$ Ganado</label>
+                <input type="number" class="form-input" id="newPrivAmt_${block.id}" placeholder="0.00">
+              </div>
+            </div>
+            <div class="add-private-btns">
+              <button onclick="addPrivateToBlock(${day.id},${block.id})" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--lilac),var(--rose));color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
+              <button onclick="addingPrivateTo=null;renderSessions()" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
             </div>
           </div>
-          <div class="add-private-btns">
-            <button onclick="addPrivateToBlock(${day.id},${block.id})" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--lilac),var(--rose));color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
-            <button onclick="addingPrivateTo=null;renderSessions()" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
-          </div>
-        </div>
-      ` : `<button class="add-private-btn" onclick="setAddingPrivate(${day.id},${block.id},'${block.startTime}')">+ privado a esta franja</button>`;
+        ` : `<button class="add-private-btn" onclick="setAddingPrivate(${day.id},${block.id},'${block.startTime}')">+ privado a esta franja</button>`;
 
-      const devBadgeStyle = block.fromMobile
-        ? `color:var(--mobileDark);background:var(--mobileLight);border:1px solid var(--mobile)`
-        : `color:var(--textLight);background:var(--bgCard);border:1px solid var(--border)`;
+        const devBadgeStyle = block.fromMobile
+          ? `color:var(--mobileDark);background:var(--mobileLight);border:1px solid var(--mobile)`
+          : `color:var(--textLight);background:var(--bgCard);border:1px solid var(--border)`;
+
+        return `
+          <div class="block-card">
+            <div class="block-header">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div class="block-time">${fmtTime(st.h,st.m)} → ${fmtTime(et.h,et.m)}</div>
+                  <span class="block-device-badge" style="${devBadgeStyle}">${block.fromMobile?'📱 cel':'💻 pc'}</span>
+                </div>
+                <div class="block-sub">${block.durationHours}h · ${block.privates.length} privado${block.privates.length!==1?'s':''}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:var(--lilacDark);font-size:15px;font-weight:bold">${fmt(blockEarn)}</span>
+                <button onclick="toggleEditEndTime(${block.id})" style="background:${isEditingThis?'var(--lilacLight)':'transparent'};border:1px solid ${isEditingThis?'var(--lilac)':'var(--border)'};border-radius:8px;color:${isEditingThis?'var(--lilacDark)':'var(--textLight)'};cursor:pointer;padding:4px 8px;font-size:11px;font-family:inherit">✏️</button>
+                ${confirmDeleteBtn(`deleteBlock(${day.id},${block.id})`,'','✕',false)}
+              </div>
+            </div>
+            ${editEndHtml}
+            ${block.privates.length>0 ? `
+              <button class="btn-expand" onclick="toggleExpandBlock(${block.id})">
+                ${isBlockExpanded?'▲ ocultar privados':'▼ ver privados'}
+              </button>
+              ${privatesHtml}
+            ` : ''}
+            ${addPrivateHtml}
+          </div>
+        `;
+      }).join('') : '';
 
       return `
-        <div class="block-card">
-          <div class="block-header">
+        <div class="day-card">
+          <div class="day-header">
             <div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <div class="block-time">${fmtTime(st.h,st.m)} → ${fmtTime(et.h,et.m)}</div>
-                <span class="block-device-badge" style="${devBadgeStyle}">${block.fromMobile?'📱 cel':'💻 pc'}</span>
-              </div>
-              <div class="block-sub">${block.durationHours}h · ${block.privates.length} privado${block.privates.length!==1?'s':''}</div>
+              <div class="day-title">${DAYS_ES[day.dayOfWeek]} ${day.date.slice(8)} · ${day.date.slice(5,7)}/${day.date.slice(0,4)}</div>
+              <div class="day-sub">${day.blocks.length} franja${day.blocks.length!==1?'s':''} · ${fmtH(day.totalHours)} · ${MOOD_EMOJI[day.mood-1]}</div>
+              <div class="day-tags">${actTags}</div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="color:var(--lilacDark);font-size:15px;font-weight:bold">${fmt(blockEarn)}</span>
-              <button onclick="toggleEditEndTime(${block.id})" style="background:${isEditingThis?'var(--lilacLight)':'transparent'};border:1px solid ${isEditingThis?'var(--lilac)':'var(--border)'};border-radius:8px;color:${isEditingThis?'var(--lilacDark)':'var(--textLight)'};cursor:pointer;padding:4px 8px;font-size:11px;font-family:inherit">✏️</button>
-              ${confirmDeleteBtn(`deleteBlock(${day.id},${block.id})`,'','✕',false)}
+            <div>
+              <div class="day-earn">${fmt(day.totalEarnings)}</div>
+              <div class="day-earn-sub">${day.blocks.reduce((a,b)=>a+b.privates.length,0)} privados</div>
             </div>
           </div>
-          ${editEndHtml}
-          ${block.privates.length>0 ? `
-            <button class="btn-expand" onclick="toggleExpandBlock(${block.id})">
-              ${isBlockExpanded?'▲ ocultar privados':'▼ ver privados'}
-            </button>
-            ${privatesHtml}
-          ` : ''}
-          ${addPrivateHtml}
+          <button class="btn-expand" onclick="toggleExpandDay(${day.id})">
+            ${isExpanded?'▲ ocultar franjas':'▼ ver franjas'}
+          </button>
+          ${isExpanded ? `<div style="margin-top:10px">${blocksHtml}</div>` : ''}
+          ${day.notes ? `<div class="day-notes">${day.notes}</div>` : ''}
+          <div class="delete-day">${confirmDeleteBtn(`deleteDay(${day.id})`,`✕ eliminar día`,'',true)}</div>
         </div>
       `;
     }).join('') : '';
 
     return `
-      <div class="day-card">
-        <div class="day-header">
+      <div class="month-group">
+        <div class="month-header ${isOpen?'open':''}" onclick="toggleExpandMonth('${mk}')">
           <div>
-            <div class="day-title">${day.date} · ${DAYS_ES[day.dayOfWeek]}</div>
-            <div class="day-sub">${day.blocks.length} franja${day.blocks.length!==1?'s':''} · ${fmtH(day.totalHours)} · ${MOOD_EMOJI[day.mood-1]}</div>
-            <div class="day-tags">${actTags}</div>
+            <div class="month-title">🗓️ ${monthName} ${year}</div>
+            <div class="month-meta">${daysCount} día${daysCount!==1?'s':''} · ${fmtH(totalHours)} · ${totalPrivs} privado${totalPrivs!==1?'s':''}</div>
           </div>
-          <div>
-            <div class="day-earn">${fmt(day.totalEarnings)}</div>
-            <div class="day-earn-sub">${day.blocks.reduce((a,b)=>a+b.privates.length,0)} privados</div>
+          <div class="month-right">
+            <div class="month-earn">${fmt(totalEarnings)}</div>
+            <div class="month-chevron">${isOpen?'▲ cerrar':'▼ ver días'}</div>
           </div>
         </div>
-        <button class="btn-expand" onclick="toggleExpandDay(${day.id})">
-          ${isExpanded?'▲ ocultar franjas':'▼ ver franjas'}
-        </button>
-        ${isExpanded ? `<div style="margin-top:10px">${blocksHtml}</div>` : ''}
-        ${day.notes ? `<div class="day-notes">${day.notes}</div>` : ''}
-        <div class="delete-day">${confirmDeleteBtn(`deleteDay(${day.id})`,`✕ eliminar día`,'',true)}</div>
+        ${isOpen ? `<div class="month-body">${daysHtml}</div>` : ''}
       </div>
     `;
   }).join('');
@@ -1936,6 +2095,12 @@ function startConfirm(id, action) {
 // ============================================================
 function toggleExpandDay(id) {
   expandedDay = expandedDay === id ? null : id;
+  renderSessions();
+}
+
+function toggleExpandMonth(mk) {
+  expandedMonth = expandedMonth === mk ? null : mk;
+  expandedDay = null; // colapsar días al cambiar de mes
   renderSessions();
 }
 
