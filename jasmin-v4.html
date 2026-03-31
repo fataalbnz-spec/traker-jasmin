@@ -281,6 +281,23 @@
   .corr-label { font-size: 11px; color: var(--textLight); }
 
   /* Charts */
+  /* ── PERIOD NAVIGATOR ── */
+  .period-nav-card { background: linear-gradient(135deg,#1a1a2e,#2d1a3d); border-radius: 16px; padding: 16px 14px; margin-bottom: 18px; }
+  .period-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+  .period-gran-group { display: flex; gap: 4px; }
+  .period-gran-btn { padding: 5px 11px; border-radius: 10px; border: 1px solid rgba(195,180,212,0.25); background: transparent; color: rgba(255,255,255,0.45); font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .period-gran-btn.active { border-color: var(--lilac); background: rgba(195,180,212,0.18); color: var(--lilac); }
+  .period-arrow-group { display: flex; align-items: center; gap: 6px; }
+  .period-arrow { background: rgba(255,255,255,0.07); border: 1px solid rgba(195,180,212,0.2); border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 14px; cursor: pointer; padding: 5px 11px; font-family: inherit; transition: all 0.15s; }
+  .period-arrow:hover { background: rgba(195,180,212,0.18); color: #fff; }
+  .period-arrow:disabled { opacity: 0.25; cursor: default; }
+  .period-label { font-size: 12px; color: rgba(255,255,255,0.6); min-width: 100px; text-align: center; }
+  .period-stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .period-stat-box { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(195,180,212,0.15); border-radius: 12px; padding: 10px 8px; text-align: center; }
+  .period-stat-val { font-size: 16px; font-weight: bold; color: #fff; }
+  .period-stat-lbl { font-size: 9px; color: rgba(255,255,255,0.35); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+  .period-empty { text-align: center; padding: 20px; font-size: 13px; color: rgba(255,255,255,0.3); font-style: italic; }
+
   .chart-card { background: var(--bgCard); border: 1px solid var(--borderLight); border-radius: 16px; padding: 16px 14px; margin-bottom: 18px; box-shadow: 0 2px 12px rgba(195,180,212,0.08); }
   .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .chart-toggle-group { display: flex; gap: 4px; }
@@ -816,6 +833,42 @@
     <span style="font-size:12px">Se guardan permanentemente para comparar años.</span>
   </div>
   <div id="histContent" style="display:none">
+
+    <!-- Period navigator -->
+    <div class="period-nav-card">
+      <div class="period-nav-row">
+        <div class="period-gran-group">
+          <button class="period-gran-btn active" id="pg-week"   onclick="setHistPeriod('week')">Semana</button>
+          <button class="period-gran-btn"         id="pg-month"  onclick="setHistPeriod('month')">Mes</button>
+          <button class="period-gran-btn"         id="pg-3month" onclick="setHistPeriod('3month')">3 Meses</button>
+        </div>
+        <div class="period-arrow-group">
+          <button class="period-arrow" id="periodPrev" onclick="shiftHistPeriod(-1)">‹</button>
+          <div class="period-label" id="periodLabel">—</div>
+          <button class="period-arrow" id="periodNext" onclick="shiftHistPeriod(1)">›</button>
+        </div>
+      </div>
+      <div class="period-stats-row">
+        <div class="period-stat-box">
+          <div class="period-stat-val" id="pvEarnings">$0</div>
+          <div class="period-stat-lbl">Ganancias</div>
+        </div>
+        <div class="period-stat-box">
+          <div class="period-stat-val" id="pvHours">0h</div>
+          <div class="period-stat-lbl">Horas</div>
+        </div>
+        <div class="period-stat-box">
+          <div class="period-stat-val" id="pvPrivs">0</div>
+          <div class="period-stat-lbl">Privados</div>
+        </div>
+        <div class="period-stat-box">
+          <div class="period-stat-val" id="pvDays">0</div>
+          <div class="period-stat-lbl">Días</div>
+        </div>
+      </div>
+      <div id="pvEmpty" class="period-empty" style="display:none">Sin datos para este período 🌸</div>
+      <canvas id="periodChart" height="140" style="display:none"></canvas>
+    </div>
     <!-- Weekly chart -->
     <div class="chart-card">
       <div class="chart-header">
@@ -992,7 +1045,9 @@ let state = {
   selectedYear: null,
 };
 
-let weekChart = null, monthChart = null, hourChart = null, dayChart = null, domChart = null;
+let weekChart = null, monthChart = null, hourChart = null, dayChart = null, domChart = null, periodChart = null;
+let histViewPeriod = 'week'; // 'week' | 'month' | '3month'
+let histViewOffset = 0;      // 0 = actual, -1 = anterior, etc.
 let expandedDay = null, expandedBlock = null, expandedMonth = null;
 let addingPrivateTo = null;
 let editingEndTime = null;
@@ -1514,14 +1569,168 @@ function renderDashboard() {
 }
 
 // ============================================================
-// RENDER HISTÓRICO
+// PERIOD NAVIGATOR (Histórico)
 // ============================================================
+function setHistPeriod(p) {
+  histViewPeriod = p;
+  histViewOffset = 0;
+  ['week','month','3month'].forEach(k => {
+    document.getElementById('pg-'+k).className = 'period-gran-btn' + (k===p?' active':'');
+  });
+  renderPeriodNav();
+}
+
+function shiftHistPeriod(dir) {
+  histViewOffset += dir;
+  // No ir más allá del período actual
+  if (histViewOffset > 0) histViewOffset = 0;
+  renderPeriodNav();
+}
+
+function getHistViewRange() {
+  const now = new Date();
+  let from, to, label;
+
+  if (histViewPeriod === 'week') {
+    // Lunes de la semana actual + offset
+    const wsStart = getWeekStart(now);
+    from = new Date(wsStart);
+    from.setDate(from.getDate() + histViewOffset * 7);
+    to = new Date(from);
+    to.setDate(to.getDate() + 6);
+    to.setHours(23,59,59,999);
+    const fmtD = d => `${d.getDate()}/${d.getMonth()+1}`;
+    label = histViewOffset === 0 ? `Esta semana · ${fmtD(from)}–${fmtD(to)}`
+          : histViewOffset === -1 ? `Semana pasada · ${fmtD(from)}–${fmtD(to)}`
+          : `Sem. ${fmtD(from)}–${fmtD(to)}`;
+
+  } else if (histViewPeriod === 'month') {
+    const y = now.getFullYear(), m = now.getMonth() + histViewOffset;
+    const ref = new Date(y, m, 1);
+    from = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    to   = new Date(ref.getFullYear(), ref.getMonth()+1, 0, 23, 59, 59, 999);
+    const mName = MONTHS_FULL_ES[from.getMonth()];
+    label = histViewOffset === 0 ? `Este mes · ${mName} ${from.getFullYear()}`
+          : histViewOffset === -1 ? `Mes pasado · ${mName} ${from.getFullYear()}`
+          : `${mName} ${from.getFullYear()}`;
+
+  } else { // 3month
+    const y = now.getFullYear(), m = now.getMonth() + histViewOffset * 3;
+    const endRef = new Date(y, m+1, 0); // último día del mes actual del rango
+    to = new Date(endRef.getFullYear(), endRef.getMonth()+1, 0, 23, 59, 59, 999);
+    from = new Date(to.getFullYear(), to.getMonth()-2, 1);
+    const mFrom = MONTHS_FULL_ES[from.getMonth()].slice(0,3);
+    const mTo   = MONTHS_FULL_ES[to.getMonth()].slice(0,3);
+    label = `${mFrom}–${mTo} ${to.getFullYear()}`;
+  }
+
+  return { from, to, label };
+}
+
+function renderPeriodNav() {
+  const { from, to, label } = getHistViewRange();
+
+  // Actualizar label y botón siguiente
+  document.getElementById('periodLabel').textContent = label;
+  document.getElementById('periodNext').disabled = histViewOffset >= 0;
+
+  // Filtrar días en el rango
+  const inRange = state.days.filter(d => {
+    const dt = new Date(d.date + 'T12:00:00');
+    return dt >= from && dt <= to;
+  });
+
+  const totalEarn  = inRange.reduce((a,d) => a + d.totalEarnings, 0);
+  const totalHours = inRange.reduce((a,d) => a + d.totalHours, 0);
+  const totalPrivs = inRange.reduce((a,d) => a + d.blocks.reduce((x,b) => x + b.privates.length, 0), 0);
+
+  document.getElementById('pvEarnings').textContent = fmt(totalEarn);
+  document.getElementById('pvHours').textContent    = fmtH(totalHours);
+  document.getElementById('pvPrivs').textContent    = totalPrivs;
+  document.getElementById('pvDays').textContent     = inRange.length;
+
+  const canvas  = document.getElementById('periodChart');
+  const empty   = document.getElementById('pvEmpty');
+
+  if (!inRange.length) {
+    canvas.style.display = 'none';
+    empty.style.display  = 'block';
+    if (periodChart) { periodChart.destroy(); periodChart = null; }
+    return;
+  }
+  empty.style.display  = 'none';
+  canvas.style.display = 'block';
+
+  // Construir barras según granularidad
+  let labels = [], data = [];
+
+  if (histViewPeriod === 'week') {
+    // 7 barras: Lun a Dom
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(from); d.setDate(from.getDate() + i);
+      const key = d.toISOString().slice(0,10);
+      const day = inRange.find(x => x.date === key);
+      labels.push(DAYS_ES[d.getDay()]);
+      data.push(day ? +day.totalEarnings.toFixed(2) : 0);
+    }
+
+  } else if (histViewPeriod === 'month') {
+    // Una barra por día del mes que tenga datos
+    inRange.sort((a,b) => a.date.localeCompare(b.date)).forEach(d => {
+      labels.push(parseInt(d.date.slice(8)));
+      data.push(+d.totalEarnings.toFixed(2));
+    });
+
+  } else { // 3month
+    // Una barra por semana
+    const cur = new Date(from);
+    while (cur <= to) {
+      const wEnd = new Date(cur); wEnd.setDate(cur.getDate() + 6);
+      const wDays = inRange.filter(d => {
+        const dt = new Date(d.date + 'T12:00:00');
+        return dt >= cur && dt <= wEnd;
+      });
+      if (wDays.length) {
+        const earn = wDays.reduce((a,d) => a + d.totalEarnings, 0);
+        labels.push(`${cur.getDate()}/${cur.getMonth()+1}`);
+        data.push(+earn.toFixed(2));
+      }
+      cur.setDate(cur.getDate() + 7);
+    }
+  }
+
+  const maxVal = Math.max(...data, 0.01);
+  const colors = data.map(v => v === maxVal && v > 0
+    ? 'rgba(106,180,140,0.9)'
+    : v > 0 ? 'rgba(195,180,212,0.75)' : 'rgba(255,255,255,0.06)'
+  );
+
+  if (periodChart) periodChart.destroy();
+  periodChart = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 5, borderSkipped: false }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `Ganancias: ${fmt(c.raw)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, callback: v => `$${v}` } }
+      }
+    }
+  });
+}
+
+
 function renderHistorico() {
   const hasData = state.weeklyHistory.length > 0 || state.monthlyHistory.length > 0;
   document.getElementById('histEmpty').style.display = hasData ? 'none' : 'block';
   document.getElementById('histContent').style.display = hasData ? 'block' : 'none';
   if (!hasData) return;
 
+  renderPeriodNav();
   renderWeekChart();
   renderMonthChart();
   renderAnnualSummary();
