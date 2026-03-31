@@ -838,8 +838,7 @@
     <div class="period-nav-card">
       <div class="period-nav-row">
         <div class="period-gran-group">
-          <button class="period-gran-btn active" id="pg-day"    onclick="setHistPeriod('day')">Día</button>
-          <button class="period-gran-btn"         id="pg-week"   onclick="setHistPeriod('week')">Semana</button>
+          <button class="period-gran-btn active" id="pg-week"   onclick="setHistPeriod('week')">Semana</button>
           <button class="period-gran-btn"         id="pg-month"  onclick="setHistPeriod('month')">Mes</button>
           <button class="period-gran-btn"         id="pg-3month" onclick="setHistPeriod('3month')">3 Meses</button>
         </div>
@@ -1012,7 +1011,7 @@ let state = {
 };
 
 let weekChart = null, monthChart = null, hourChart = null, dayChart = null, domChart = null, periodChart = null;
-let histViewPeriod = 'day';  // 'day' | 'week' | 'month' | '3month'
+let histViewPeriod = 'week'; // 'week' | 'month' | '3month'
 let histViewOffset = 0;      // 0 = actual, -1 = anterior, etc.
 let periodMetric   = 'both'; // 'both' | 'earnings' | 'hours'
 let expandedDay = null, expandedBlock = null, expandedMonth = null;
@@ -1541,7 +1540,7 @@ function renderDashboard() {
 function setHistPeriod(p) {
   histViewPeriod = p;
   histViewOffset = 0;
-  ['day','week','month','3month'].forEach(k => {
+  ['week','month','3month'].forEach(k => {
     document.getElementById('pg-'+k).className = 'period-gran-btn' + (k===p?' active':'');
   });
   renderPeriodNav();
@@ -1565,21 +1564,16 @@ function getHistViewRange() {
   const now = new Date();
   let from, to, label;
 
-  if (histViewPeriod === 'day') {
-    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() + histViewOffset);
-    to   = new Date(from); to.setHours(23,59,59,999);
-    const dayName = DAYS_ES[from.getDay()];
-    label = histViewOffset === 0  ? `Hoy · ${dayName} ${from.getDate()}/${from.getMonth()+1}`
-          : histViewOffset === -1 ? `Ayer · ${dayName} ${from.getDate()}/${from.getMonth()+1}`
-          : `${dayName} ${from.getDate()}/${from.getMonth()+1}/${from.getFullYear()}`;
-
-  } else if (histViewPeriod === 'week') {
+  if (histViewPeriod === 'week') {
+    // Lunes de la semana actual + offset
     const wsStart = getWeekStart(now);
     from = new Date(wsStart);
     from.setDate(from.getDate() + histViewOffset * 7);
-    to = new Date(from); to.setDate(to.getDate() + 6); to.setHours(23,59,59,999);
+    to = new Date(from);
+    to.setDate(to.getDate() + 6);
+    to.setHours(23,59,59,999);
     const fmtD = d => `${d.getDate()}/${d.getMonth()+1}`;
-    label = histViewOffset === 0  ? `Esta semana · ${fmtD(from)}–${fmtD(to)}`
+    label = histViewOffset === 0 ? `Esta semana · ${fmtD(from)}–${fmtD(to)}`
           : histViewOffset === -1 ? `Semana pasada · ${fmtD(from)}–${fmtD(to)}`
           : `Sem. ${fmtD(from)}–${fmtD(to)}`;
 
@@ -1589,13 +1583,13 @@ function getHistViewRange() {
     from = new Date(ref.getFullYear(), ref.getMonth(), 1);
     to   = new Date(ref.getFullYear(), ref.getMonth()+1, 0, 23, 59, 59, 999);
     const mName = MONTHS_FULL_ES[from.getMonth()];
-    label = histViewOffset === 0  ? `Este mes · ${mName} ${from.getFullYear()}`
+    label = histViewOffset === 0 ? `Este mes · ${mName} ${from.getFullYear()}`
           : histViewOffset === -1 ? `Mes pasado · ${mName} ${from.getFullYear()}`
           : `${mName} ${from.getFullYear()}`;
 
   } else { // 3month
     const y = now.getFullYear(), m = now.getMonth() + histViewOffset * 3;
-    const endRef = new Date(y, m+1, 0);
+    const endRef = new Date(y, m+1, 0); // último día del mes actual del rango
     to = new Date(endRef.getFullYear(), endRef.getMonth()+1, 0, 23, 59, 59, 999);
     from = new Date(to.getFullYear(), to.getMonth()-2, 1);
     const mFrom = MONTHS_FULL_ES[from.getMonth()].slice(0,3);
@@ -1624,7 +1618,7 @@ function renderPeriodNav() {
   document.getElementById('pvEarnings').textContent = fmt(totalEarn);
   document.getElementById('pvHours').textContent    = fmtH(totalHours);
   document.getElementById('pvPrivs').textContent    = totalPrivs;
-  document.getElementById('pvDays').textContent     = histViewPeriod === 'day' ? (inRange.length ? '1' : '0') : inRange.length;
+  document.getElementById('pvDays').textContent     = inRange.length;
 
   const canvas = document.getElementById('periodChart');
   const empty  = document.getElementById('pvEmpty');
@@ -1642,36 +1636,7 @@ function renderPeriodNav() {
 
   let labels = [], dataEarn = [], dataHours = [], barWeekends = [];
 
-  if (histViewPeriod === 'day') {
-    // Barras por hora del día (0–23), usando los bloques del día
-    const dayEntry = inRange[0]; // solo hay un día
-    const byHour = {}; // { 8: {earn, hours}, ... }
-    (dayEntry.blocks || []).forEach(b => {
-      const st = parseTimeVal(b.startTime);
-      const startH = st.h;
-      const earn = b.privates.reduce((a,p) => a + p.amount, 0);
-      const hrs  = b.durationHours || 0;
-      // Distribuir entre horas que abarca el bloque
-      const et = parseTimeVal(b.endTime);
-      const endH = et.h + (et.m > 0 ? 1 : 0);
-      for (let h = startH; h < endH; h++) {
-        if (!byHour[h]) byHour[h] = { earn: 0, hours: 0 };
-        const fraction = Math.min(1, (endH - h) / (endH - startH || 1));
-        byHour[h].earn  += earn * fraction;
-        byHour[h].hours += hrs  * fraction;
-      }
-    });
-    // Construir barras solo para horas con datos
-    Object.keys(byHour).sort((a,b) => +a - +b).forEach(h => {
-      const hNum = +h;
-      const ampm = hNum < 12 ? `${hNum===0?12:hNum}am` : `${hNum===12?12:hNum-12}pm`;
-      labels.push(ampm);
-      dataEarn.push(+byHour[h].earn.toFixed(2));
-      dataHours.push(+byHour[h].hours.toFixed(2));
-      barWeekends.push(false); // vista diaria no distingue fin de semana por hora
-    });
-
-  } else if (histViewPeriod === 'week') {
+  if (histViewPeriod === 'week') {
     for (let i = 0; i < 7; i++) {
       const d = new Date(from); d.setDate(from.getDate() + i);
       const key = d.toISOString().slice(0,10);
@@ -1681,7 +1646,6 @@ function renderPeriodNav() {
       dataHours.push(day ? +day.totalHours.toFixed(1) : 0);
       barWeekends.push(d.getDay() === 0 || d.getDay() === 6);
     }
-
   } else if (histViewPeriod === 'month') {
     inRange.sort((a,b) => a.date.localeCompare(b.date)).forEach(d => {
       labels.push(parseInt(d.date.slice(8)));
@@ -1690,7 +1654,6 @@ function renderPeriodNav() {
       const dow = new Date(d.date + 'T12:00:00').getDay();
       barWeekends.push(dow === 0 || dow === 6);
     });
-
   } else { // 3month
     const cur = new Date(from);
     while (cur <= to) {
@@ -1721,7 +1684,7 @@ function renderPeriodNav() {
   );
 
   const datasets = [];
-  if (m === 'earnings' || m === 'both') datasets.push({ label:'Ingresos', data:dataEarn,  backgroundColor:earnColors,  borderRadius:5, borderSkipped:false, yAxisID:'y'  });
+  if (m === 'earnings' || m === 'both') datasets.push({ label:'Ingresos', data:dataEarn, backgroundColor:earnColors, borderRadius:5, borderSkipped:false, yAxisID:'y' });
   if (m === 'hours'    || m === 'both') datasets.push({ label:'Horas',    data:dataHours, backgroundColor:hoursColors, borderRadius:5, borderSkipped:false, yAxisID: m==='both'?'y2':'y' });
 
   legend.style.display = m === 'both' ? 'flex' : 'none';
@@ -1746,6 +1709,8 @@ function renderPeriodNav() {
     }
   });
 }
+
+
 
 function renderHistorico() {
   const hasData = state.weeklyHistory.length > 0 || state.monthlyHistory.length > 0 || state.days.length > 0;
@@ -2442,29 +2407,6 @@ function switchTab(name) {
 // ============================================================
 // CHART METRIC TOGGLES
 // ============================================================
-function setWeekMetric(m) {
-  state.weekMetric = m;
-  ['both','earnings','hours'].forEach(v=>{
-    const el = document.getElementById('wm-'+v);
-    el.className = 'chart-toggle' + (v===m?' active':'');
-  });
-  renderWeekChart();
-}
-
-function setMonthMetric(m) {
-  state.monthMetric = m;
-  ['both','earnings','hours'].forEach(v=>{
-    const el = document.getElementById('mm-'+v);
-    el.className = 'chart-toggle gold' + (v===m?' active':'');
-  });
-  renderMonthChart();
-}
-
-function selectYear(y) {
-  state.selectedYear = y;
-  renderMonthChart();
-}
-
 // ============================================================
 // RENDER ALL
 // ============================================================
