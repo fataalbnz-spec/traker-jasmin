@@ -622,6 +622,7 @@
     </div>
     <div class="goal-bar-footer" style="color:var(--lilacDark)">
       <span id="weekGoalPct">0% completado</span>
+      <span id="weekCountdown" style="font-size:11px;opacity:0.85">⏳ calculando...</span>
       <span id="weekGoalRem">Faltan $200.00</span>
     </div>
   </div>
@@ -645,6 +646,7 @@
     </div>
     <div class="goal-bar-footer" style="color:var(--gold)">
       <span id="monthGoalPct">0% completado</span>
+      <span id="monthCountdown" style="font-size:11px;opacity:0.85">⏳ calculando...</span>
       <span id="monthGoalRem">Faltan $800.00</span>
     </div>
   </div>
@@ -957,11 +959,11 @@
     <div class="form-grid-2">
       <div>
         <label class="form-label">Entrada</label>
-        <select class="form-input" id="startTime" onchange="updateDuration()"></select>
+        <input type="time" class="form-input" id="startTime" onchange="updateDuration()" style="cursor:pointer">
       </div>
       <div>
         <label class="form-label">Salida</label>
-        <select class="form-input" id="endTime" onchange="updateDuration()"></select>
+        <input type="time" class="form-input" id="endTime" onchange="updateDuration()" style="cursor:pointer">
       </div>
     </div>
     <div class="duration-hint" id="durationHint">⏱ Duración: 3.0 horas</div>
@@ -1106,6 +1108,12 @@ function fmtTime(h, m) {
 function parseTimeVal(val) {
   const [h, m] = val.split(":").map(Number);
   return { h, m: m || 0 };
+}
+
+// Convierte "9:5" o "9:30" al formato "HH:MM" que necesita input[type=time]
+function toTimeInput(val) {
+  const {h, m} = parseTimeVal(val);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 
 function dur(startVal, endVal) {
@@ -1462,11 +1470,25 @@ function renderHeader() {
   document.getElementById('weekGoalFill').style.background = wPct>=100 ? 'linear-gradient(90deg,var(--green),#5d9478)' : 'linear-gradient(90deg,var(--lilac),var(--rose))';
   document.getElementById('weekGoalPct').textContent = wPct.toFixed(0)+'% completado';
   document.getElementById('weekGoalRem').textContent = wPct>=100 ? '✅ ¡Meta alcanzada! 🎉' : `Faltan ${fmt(state.weeklyGoal-acc.weeklyEarn)}`;
+  (function(){
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun ... 6=Sab
+    const daysLeft = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+    const el = document.getElementById('weekCountdown');
+    if(el) el.textContent = daysLeft === 0 ? '🔔 ¡Termina hoy!' : `⏳ ${daysLeft} día${daysLeft===1?'':'s'} para el cierre`;
+  })();
   document.getElementById('monthGoalVal').textContent = `${fmt(acc.monthlyEarn)} / ${fmt(state.monthlyGoal)}`;
   document.getElementById('monthGoalFill').style.width = mPct+'%';
   document.getElementById('monthGoalFill').style.background = mPct>=100 ? 'linear-gradient(90deg,var(--green),#5d9478)' : 'linear-gradient(90deg,var(--gold),var(--rose))';
   document.getElementById('monthGoalPct').textContent = mPct.toFixed(0)+'% completado';
   document.getElementById('monthGoalRem').textContent = mPct>=100 ? '✅ ¡Meta alcanzada! 🎉' : `Faltan ${fmt(state.monthlyGoal-acc.monthlyEarn)}`;
+  (function(){
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    const daysLeft = lastDay - now.getDate();
+    const el = document.getElementById('monthCountdown');
+    if(el) el.textContent = daysLeft === 0 ? '🔔 ¡Termina hoy!' : `⏳ ${daysLeft} día${daysLeft===1?'':'s'} para el cierre`;
+  })();
 
   // Earnings
   document.getElementById('earnToday').textContent = fmt(acc.dailyEarn);
@@ -2044,8 +2066,8 @@ function restorePendingForm() {
     // Restaurar valores del formulario
     document.getElementById('regDate').value = p.date || today();
     onDateChange();
-    if (p.start) document.getElementById('startTime').value = p.start;
-    if (p.end)   document.getElementById('endTime').value   = p.end;
+    if (p.start) document.getElementById('startTime').value = toTimeInput(p.start);
+    if (p.end)   document.getElementById('endTime').value   = toTimeInput(p.end);
     updateDuration();
     if (p.mood)  { document.getElementById('moodRange').value = p.mood; updateMood(); }
     if (p.notes) document.getElementById('dayNotes').value = p.notes;
@@ -2078,19 +2100,11 @@ function dismissPending() {
 }
 
 function initAddForm() {
-  // Populate time slots
+  // Set time defaults
   const startSel = document.getElementById('startTime');
   const endSel = document.getElementById('endTime');
-  startSel.innerHTML = '';
-  endSel.innerHTML = '';
-  TIME_SLOTS.forEach(({h,m,value})=>{
-    const label = fmtTime(h,m);
-    startSel.innerHTML += `<option value="${value}">${label}</option>`;
-    endSel.innerHTML += `<option value="${value}">${label}</option>`;
-  });
-  // Set defaults
-  startSel.value = '10:0';
-  endSel.value = '13:0';
+  startSel.value = '10:00';
+  endSel.value = '13:00';
   document.getElementById('regDate').value = today();
   updateDuration();
   onDateChange();
@@ -2811,7 +2825,7 @@ function _restoreLiveUI() {
     const bestDiff = Math.abs((best.h*60+best.m) - (liveStartTime.h*60+liveStartTime.m));
     return diff < bestDiff ? slot : best;
   });
-  startSel.value = closest.value;
+  startSel.value = toTimeInput(closest.value);
   onDateChange();
   if (!liveInterval) {
     liveInterval = setInterval(updateLiveDisplay, 1000);
@@ -2882,7 +2896,7 @@ function startLive() {
     const bestDiff = Math.abs((best.h*60+best.m) - (liveStartTime.h*60+liveStartTime.m));
     return diff < bestDiff ? slot : best;
   });
-  startSel.value = closest.value;
+  startSel.value = toTimeInput(closest.value);
   onDateChange();
 
   liveInterval = setInterval(updateLiveDisplay, 1000);
@@ -3007,7 +3021,7 @@ function stopLive() {
     const bestDiff = Math.abs((best.h*60+best.m) - (endH*60+endM));
     return diff < bestDiff ? slot : best;
   });
-  endSel.value = closest.value;
+  endSel.value = toTimeInput(closest.value);
   updateDuration();
 
   // Guardar startTime ANTES de nullear (fix bug original)
@@ -3485,7 +3499,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
         const bestDiff = Math.abs((best.h*60+best.m) - (liveStartTime.h*60+liveStartTime.m));
         return diff < bestDiff ? slot : best;
       });
-      startSel.value = closest.value;
+      startSel.value = toTimeInput(closest.value);
       onDateChange();
 
       liveInterval = setInterval(updateLiveDisplay, 1000);
