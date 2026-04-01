@@ -1197,7 +1197,8 @@ function driveLogin() {
       await driveLoadOrCreate();
       renderAll();
       // 🔥 Iniciar escucha de live en tiempo real (Firebase)
-      fbListenLive();
+      // Pequeño delay para asegurar que el módulo Firebase ya está listo
+      setTimeout(() => fbListenLive(), 800);
     }
   });
   client.requestAccessToken();
@@ -2648,8 +2649,19 @@ let fbLiveUserId = null; // se setea cuando el usuario hace login con Google
 function getFbUserId() {
   if (fbLiveUserId) return fbLiveUserId;
   if (driveUser && driveUser.email) {
-    // Sanitizar email para usarlo como key de Firebase
     fbLiveUserId = driveUser.email.replace(/[.#$[\]]/g, '_');
+    return fbLiveUserId;
+  }
+  // Fallback: usar un ID guardado en localStorage para este dispositivo
+  let storedId = localStorage.getItem('lj_fb_user_id');
+  if (!storedId) {
+    storedId = 'user_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('lj_fb_user_id', storedId);
+  }
+  // Solo usar el fallback si Drive no está habilitado (modo sin cuenta)
+  // Con Drive habilitado, esperamos a que driveUser esté disponible
+  if (!driveEnabled) {
+    fbLiveUserId = storedId;
     return fbLiveUserId;
   }
   return null;
@@ -2684,8 +2696,17 @@ async function fbClearLive() {
 }
 
 // Escucha cambios en tiempo real desde Firebase
-function fbListenLive() {
-  if (!fbIsReady()) return;
+function fbListenLive(retries = 0) {
+  if (!window.__fbReady || !window.__fbDb) {
+    // Firebase módulo aún no cargó — reintentar hasta 5 veces
+    if (retries < 5) setTimeout(() => fbListenLive(retries + 1), 600);
+    return;
+  }
+  if (!getFbUserId()) {
+    // driveUser aún no está listo — reintentar
+    if (retries < 8) setTimeout(() => fbListenLive(retries + 1), 500);
+    return;
+  }
   if (fbLiveUnsubscribe) { fbLiveUnsubscribe(); fbLiveUnsubscribe = null; }
   const userId = getFbUserId();
   const liveRef = window.__fbRef(window.__fbDb, `live_sessions/${userId}`);
