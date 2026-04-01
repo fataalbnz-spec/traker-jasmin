@@ -2612,9 +2612,13 @@ let fbLiveUserId = null;
 
 function getFbUserId() {
   if (fbLiveUserId) return fbLiveUserId;
-  if (driveUser && driveUser.email) {
-    fbLiveUserId = driveUser.email.replace(/[.#$[\]@]/g, '_');
-    return fbLiveUserId;
+  if (driveUser) {
+    // Usar email si está disponible, sino usar el id de Google
+    const key = driveUser.email || driveUser.id;
+    if (key) {
+      fbLiveUserId = key.replace(/[.#$[\]@]/g, '_');
+      return fbLiveUserId;
+    }
   }
   return null;
 }
