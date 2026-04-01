@@ -555,6 +555,21 @@
   <button class="drive-btn drive-btn-logout" onclick="driveLogout()">Salir</button>
 </div>
 
+<!-- PENDIENTES POR GUARDAR BANNER -->
+<div id="pendingBanner" style="display:none;margin:10px 16px 0;background:linear-gradient(135deg,#fff0f0,#ffe8e8);border:1.5px solid #e57373;border-radius:14px;padding:10px 14px;align-items:center;justify-content:space-between;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+    <div style="font-size:1.2rem">⚠️</div>
+    <div>
+      <div style="font-size:.7rem;color:#c62828;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Pendiente por guardar</div>
+      <div style="font-size:.68rem;color:#e57373;margin-top:1px" id="pendingBannerText">Tienes datos sin guardar</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-shrink:0">
+    <button onclick="restorePendingForm()" style="background:#e53935;border:none;border-radius:8px;color:#fff;font-size:.72rem;padding:6px 12px;cursor:pointer;font-family:inherit;font-weight:600">Recuperar</button>
+    <button onclick="dismissPending()" style="background:transparent;border:1px solid #e57373;border-radius:8px;color:#e57373;font-size:.72rem;padding:6px 8px;cursor:pointer;font-family:inherit">✕</button>
+  </div>
+</div>
+
 <!-- LIVE TIMER BANNER -->
 <div class="live-banner" id="liveBanner">
   <div class="live-top">
@@ -1973,6 +1988,95 @@ function renderDomChart() {
     }
   });
 }
+// ============================================================
+// PENDIENTES POR GUARDAR
+// ============================================================
+function savePendingForm() {
+  try {
+    const pending = {
+      date:     document.getElementById('regDate').value,
+      start:    document.getElementById('startTime').value,
+      end:      document.getElementById('endTime').value,
+      mood:     document.getElementById('moodRange').value,
+      notes:    document.getElementById('dayNotes').value,
+      mobile:   state.fromMobile,
+      activity: { ...state.activity },
+      period:   state.period,
+      periodIntensity: state.period ? document.getElementById('periodRange').value : 0,
+      privates: [...livePrivatesQueue],
+      extras:   [...pendingExtraIncomes],
+      savedAt:  new Date().toISOString()
+    };
+    // Solo guardar si hay algo real (privados, extras, o notas)
+    if (pending.privates.length || pending.extras.length || pending.notes.trim()) {
+      localStorage.setItem('lj_pending_form', JSON.stringify(pending));
+    }
+  } catch(e) {}
+}
+
+function checkPendingForm() {
+  try {
+    const raw = localStorage.getItem('lj_pending_form');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (!p) return;
+    const privCount = (p.privates||[]).length;
+    const extCount  = (p.extras||[]).length;
+    const total     = (p.privates||[]).reduce((a,x)=>a+x.amount,0) +
+                      (p.extras||[]).reduce((a,x)=>a+x.amount,0);
+    const dateLabel = p.date || '—';
+    const banner = document.getElementById('pendingBanner');
+    if (banner) {
+      banner.style.display = 'flex';
+      document.getElementById('pendingBannerText').textContent =
+        `📋 Pendiente del ${dateLabel}: ${privCount} privado${privCount!==1?'s':''} · ${fmt(total)}`;
+    }
+  } catch(e) {}
+}
+
+function restorePendingForm() {
+  try {
+    const raw = localStorage.getItem('lj_pending_form');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (!p) return;
+
+    // Restaurar valores del formulario
+    document.getElementById('regDate').value = p.date || today();
+    onDateChange();
+    if (p.start) document.getElementById('startTime').value = p.start;
+    if (p.end)   document.getElementById('endTime').value   = p.end;
+    updateDuration();
+    if (p.mood)  { document.getElementById('moodRange').value = p.mood; updateMood(); }
+    if (p.notes) document.getElementById('dayNotes').value = p.notes;
+    state.fromMobile = p.mobile || false;
+    setDevice(state.fromMobile);
+    state.activity = p.activity || { gym:false, stretch:false, park:false };
+    refreshActivityBtns();
+    state.period = p.period || false;
+    refreshPeriodBtn();
+    if (state.period && p.periodIntensity) {
+      document.getElementById('periodRange').value = p.periodIntensity;
+      updatePeriodLabel();
+    }
+    livePrivatesQueue = p.privates || [];
+    renderLivePrivList();
+    pendingExtraIncomes = p.extras || [];
+    renderPendingExtraIncomes();
+
+    // Ocultar banner y cambiar a tab de registro
+    const banner = document.getElementById('pendingBanner');
+    if (banner) banner.style.display = 'none';
+    switchTab('add');
+  } catch(e) { localStorage.removeItem('lj_pending_form'); }
+}
+
+function dismissPending() {
+  localStorage.removeItem('lj_pending_form');
+  const banner = document.getElementById('pendingBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 function initAddForm() {
   // Populate time slots
   const startSel = document.getElementById('startTime');
@@ -2187,6 +2291,9 @@ function saveBlock() {
   const extraIncomes = [...pendingExtraIncomes];
   pendingExtraIncomes = [];
   renderPendingExtraIncomes();
+
+  // Limpiar pendiente guardado al guardar exitosamente
+  localStorage.removeItem('lj_pending_form');
 
   if (existingIdx >= 0) {
     const d = state.days[existingIdx];
@@ -2915,6 +3022,9 @@ function stopLive() {
   // 🔥 Limpiar en Firebase (avisa a todos los dispositivos que el live terminó)
   fbClearLive();
 
+  // Guardar formulario pendiente por si se recarga antes de guardar
+  savePendingForm();
+
   document.getElementById('liveBanner').classList.remove('active');
   document.getElementById('punchBtn').classList.remove('live');
   document.getElementById('punchDot').classList.remove('live');
@@ -3383,6 +3493,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
       renderLivePrivList();
     }
   } catch(e) { localStorage.removeItem('lj_live_start'); localStorage.removeItem('lj_live_privates'); }
+
+  // Revisar si hay un formulario pendiente por guardar
+  checkPendingForm();
 });
 </script>
 <!-- Firebase init - va al final para asegurar que el SDK ya cargó -->
