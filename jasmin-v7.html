@@ -625,6 +625,12 @@
       <span id="weekCountdown" style="font-size:11px;opacity:0.85">⏳ calculando...</span>
       <span id="weekGoalRem">Faltan $200.00</span>
     </div>
+    <!-- Daily pace row -->
+    <div id="weekDailyPaceRow" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(150,100,200,0.2);font-size:11px;color:var(--lilacDark);display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between">
+      <span>📋 Necesitas: <strong id="weekDailyNeeded">—</strong>/día</span>
+      <span>✅ Hoy llevas: <strong id="weekDailyToday">$0.00</strong></span>
+      <span id="weekDailyStatus" style="font-weight:bold">—</span>
+    </div>
   </div>
 
   <!-- Monthly goal bar -->
@@ -732,18 +738,31 @@
   </div>
 
   <!-- Streak -->
-  <div class="streak-card" style="margin-top:14px">
-    <div class="streak-fire">🔥</div>
-    <div style="flex:1">
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <div class="streak-num" id="streakNum">0</div>
-        <div class="streak-label">días seguidos</div>
+  <div class="streak-card" style="margin-top:14px;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:center;gap:14px;width:100%">
+      <div class="streak-fire" id="streakFire">🔥</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <div class="streak-num" id="streakNum">0</div>
+          <div class="streak-label">días seguidos (≥10h)</div>
+        </div>
+        <div class="streak-record" id="streakRecord">Récord: 0 días</div>
       </div>
-      <div class="streak-record" id="streakRecord">Récord: 0 días</div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase">Último día</div>
+        <div style="font-size:12px;color:var(--textMid)" id="streakLastDay">—</div>
+      </div>
     </div>
-    <div style="text-align:right">
-      <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase">Último día</div>
-      <div style="font-size:12px;color:var(--textMid)" id="streakLastDay">—</div>
+    <!-- Daily hours progress toward 10h -->
+    <div style="width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:11px;color:var(--textMid)">⏱️ Horas online hoy</div>
+        <div style="font-size:11px;font-weight:bold;color:var(--gold)" id="streakTodayLabel">0h / 10h</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.08);border-radius:6px;height:7px;width:100%;overflow:hidden">
+        <div id="streakTodayBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--rose));border-radius:6px;transition:width 0.4s"></div>
+      </div>
+      <div style="font-size:11px;color:var(--textMid);margin-top:3px;text-align:right" id="streakTodayMsg">Faltan 10h para contar el día 🎯</div>
     </div>
   </div>
 </div>
@@ -1476,6 +1495,37 @@ function renderHeader() {
     const daysLeft = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
     const el = document.getElementById('weekCountdown');
     if(el) el.textContent = daysLeft === 0 ? '🔔 ¡Termina hoy!' : `⏳ ${daysLeft} día${daysLeft===1?'':'s'} para el cierre`;
+
+    // Daily pace: how much needed per remaining day (including today)
+    const remaining = Math.max(state.weeklyGoal - acc.weeklyEarn, 0);
+    // Days left including today: if today is Sunday (end of week) = 1, else daysLeft+1
+    const daysIncludingToday = dayOfWeek === 0 ? 1 : daysLeft + 1;
+    const neededEl = document.getElementById('weekDailyNeeded');
+    const todayEl = document.getElementById('weekDailyToday');
+    const statusEl = document.getElementById('weekDailyStatus');
+    if (neededEl && todayEl && statusEl) {
+      if (wPct >= 100) {
+        neededEl.textContent = '—';
+        todayEl.textContent = fmt(acc.dailyEarn);
+        statusEl.textContent = '🎉 ¡Meta semanal cumplida!';
+        statusEl.style.color = 'var(--green)';
+      } else {
+        const dailyNeeded = daysIncludingToday > 0 ? remaining / daysIncludingToday : remaining;
+        neededEl.textContent = fmt(dailyNeeded);
+        todayEl.textContent = fmt(acc.dailyEarn);
+        const diff = acc.dailyEarn - dailyNeeded;
+        if (acc.dailyEarn === 0) {
+          statusEl.textContent = `📌 Pendiente arrancar hoy`;
+          statusEl.style.color = 'var(--textMid)';
+        } else if (diff >= 0) {
+          statusEl.textContent = `🟢 +${fmt(diff)} sobre el ritmo`;
+          statusEl.style.color = 'var(--green)';
+        } else {
+          statusEl.textContent = `🔴 ${fmt(Math.abs(diff))} debajo del ritmo`;
+          statusEl.style.color = 'var(--roseDark)';
+        }
+      }
+    }
   })();
   document.getElementById('monthGoalVal').textContent = `${fmt(acc.monthlyEarn)} / ${fmt(state.monthlyGoal)}`;
   document.getElementById('monthGoalFill').style.width = mPct+'%';
@@ -3060,9 +3110,14 @@ function stopLive() {
 // ============================================================
 // STREAK
 // ============================================================
+const STREAK_MIN_HOURS = 10;
+
 function calcStreak() {
   if (!state.days.length) return { current: 0, record: 0, lastDay: '—' };
-  const sorted = [...state.days].sort((a,b) => b.date.localeCompare(a.date));
+  // Only count days where totalHours >= 10
+  const qualifiedDays = state.days.filter(d => (d.totalHours || 0) >= STREAK_MIN_HOURS);
+  if (!qualifiedDays.length) return { current: 0, record: 0, lastDay: '—' };
+  const sorted = [...qualifiedDays].sort((a,b) => b.date.localeCompare(a.date));
   const todayStr = today();
   let streak = 0, record = 0, tempStreak = 1;
 
@@ -3100,6 +3155,22 @@ function renderStreak() {
   document.getElementById('streakRecord').textContent = `Récord: ${s.record} días`;
   document.getElementById('streakLastDay').textContent = s.lastDay !== '—' ? s.lastDay.slice(5).replace('-','/') : '—';
   document.getElementById('streakFire') && (document.getElementById('streakFire').textContent = s.current >= 7 ? '🔥' : s.current >= 3 ? '⚡' : '💤');
+
+  // Today's hours progress toward 10h
+  const todayStr = today();
+  const todayDays = state.days.filter(d => d.date === todayStr);
+  const todayHours = todayDays.reduce((a,d) => a + (d.totalHours || 0), 0);
+  const pct = Math.min((todayHours / STREAK_MIN_HOURS) * 100, 100);
+  const remaining = Math.max(STREAK_MIN_HOURS - todayHours, 0);
+  const barEl = document.getElementById('streakTodayBar');
+  const lblEl = document.getElementById('streakTodayLabel');
+  const msgEl = document.getElementById('streakTodayMsg');
+  if (barEl) barEl.style.width = pct + '%';
+  if (barEl) barEl.style.background = pct >= 100 ? 'linear-gradient(90deg,var(--green),#5d9478)' : 'linear-gradient(90deg,var(--gold),var(--rose))';
+  if (lblEl) lblEl.textContent = `${fmtH(todayHours)} / ${STREAK_MIN_HOURS}h`;
+  if (lblEl) lblEl.style.color = pct >= 100 ? 'var(--green)' : 'var(--gold)';
+  if (msgEl) msgEl.textContent = pct >= 100 ? '✅ ¡Día completo! Cuenta para la racha 🔥' : `Faltan ${fmtH(remaining)} para contar el día 🎯`;
+  if (msgEl) msgEl.style.color = pct >= 100 ? 'var(--green)' : 'var(--textMid)';
 }
 
 // ============================================================
