@@ -747,13 +747,46 @@
           <div class="streak-label">días seguidos (≥10h)</div>
         </div>
         <div class="streak-record" id="streakRecord">Récord: 0 días</div>
+        <div style="font-size:10px;color:var(--lilacDark);margin-top:2px" id="streakRestLabel"></div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase">Último día</div>
-        <div style="font-size:12px;color:var(--textMid)" id="streakLastDay">—</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase">Último día</div>
+          <div style="font-size:12px;color:var(--textMid)" id="streakLastDay">—</div>
+        </div>
+        <button onclick="toggleStreakSettings()" style="font-size:11px;padding:3px 8px;border-radius:7px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;font-family:inherit">⚙️ Ajustar</button>
       </div>
     </div>
-    <!-- Daily hours progress toward 10h -->
+
+    <!-- Settings form -->
+    <div id="streakSettingsForm" style="display:none;width:100%;background:rgba(255,255,255,0.6);border-radius:10px;padding:10px 12px;border:1px solid var(--gold)">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Ajustes de racha</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label style="font-size:11px;color:var(--textMid);display:block;margin-bottom:3px">⏱️ Mínimo de horas para contar el día</label>
+          <input type="number" id="streakHoursInput" min="1" max="24" step="0.5" value="10" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--gold);font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--textMid);display:block;margin-bottom:3px">🌙 Día de descanso semanal (no rompe la racha)</label>
+          <select id="streakRestDaySelect" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--gold);font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box">
+            <option value="">Sin día de descanso</option>
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+            <option value="6">Sábado</option>
+            <option value="0">Domingo</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="saveStreakSettingsUI()" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--gold);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
+          <button onclick="toggleStreakSettings()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily hours progress -->
     <div style="width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <div style="font-size:11px;color:var(--textMid)">⏱️ Horas online hoy</div>
@@ -1374,6 +1407,7 @@ function loadData() {
     const mh = localStorage.getItem('lj_monthly_history_v1');
     if (mh) state.monthlyHistory = JSON.parse(mh);
   } catch(e) {}
+  loadStreakSettings();
 }
 
 function saveData() {
@@ -3110,29 +3144,59 @@ function stopLive() {
 // ============================================================
 // STREAK
 // ============================================================
-const STREAK_MIN_HOURS = 10;
+// streakMinHours and streakRestDay are stored in state and localStorage
+function getStreakMinHours() { return state.streakMinHours || 10; }
+function getStreakRestDay()  { return state.streakRestDay; } // 0=Dom,1=Lun...6=Sab, null=ninguno
+
+function saveStreakSettings() {
+  localStorage.setItem('lj_streak_min_hours', String(state.streakMinHours || 10));
+  localStorage.setItem('lj_streak_rest_day',  state.streakRestDay != null ? String(state.streakRestDay) : '');
+}
+function loadStreakSettings() {
+  const h = localStorage.getItem('lj_streak_min_hours');
+  if (h) state.streakMinHours = parseFloat(h) || 10;
+  const r = localStorage.getItem('lj_streak_rest_day');
+  state.streakRestDay = (r !== null && r !== '') ? parseInt(r) : null;
+}
 
 function calcStreak() {
   if (!state.days.length) return { current: 0, record: 0, lastDay: '—' };
-  // Only count days where totalHours >= 10
-  const qualifiedDays = state.days.filter(d => (d.totalHours || 0) >= STREAK_MIN_HOURS);
+  const minH    = getStreakMinHours();
+  const restDay = getStreakRestDay(); // null or 0-6
+
+  // Helper: does the gap between two consecutive dates represent exactly
+  // a 2-day jump where the skipped day is the rest day?
+  function isRestDayGap(prevDate, currDate) {
+    if (restDay == null) return false;
+    const diff = Math.floor((prevDate - currDate) / 86400000);
+    if (diff !== 2) return false;
+    // The skipped date is currDate + 1 day
+    const skipped = new Date(currDate); skipped.setDate(skipped.getDate() + 1);
+    return skipped.getDay() === restDay;
+  }
+
+  const qualifiedDays = state.days.filter(d => (d.totalHours || 0) >= minH);
   if (!qualifiedDays.length) return { current: 0, record: 0, lastDay: '—' };
   const sorted = [...qualifiedDays].sort((a,b) => b.date.localeCompare(a.date));
   const todayStr = today();
   let streak = 0, record = 0, tempStreak = 1;
 
-  // Current streak from today or yesterday
-  const lastDate = new Date(sorted[0].date + 'T12:00:00');
+  // Current streak: allow today itself to be the rest day (gap of 1 from yesterday is fine)
+  const lastDate  = new Date(sorted[0].date + 'T12:00:00');
   const todayDate = new Date(todayStr + 'T12:00:00');
-  const diffDays = Math.floor((todayDate - lastDate) / 86400000);
-  if (diffDays > 1) {
-    // Broken streak
-  } else {
+  const diffFromToday = Math.floor((todayDate - lastDate) / 86400000);
+  // Streak is alive if: last qualified day is today (0), yesterday (1),
+  // or today is the rest day and last qualified day was the day before yesterday (2)
+  const todayIsRestDay = restDay != null && todayDate.getDay() === restDay;
+  const streakAlive = diffFromToday === 0 || diffFromToday === 1 || (todayIsRestDay && diffFromToday === 2);
+
+  if (streakAlive) {
     streak = 1;
     for (let i = 1; i < sorted.length; i++) {
       const prev = new Date(sorted[i-1].date + 'T12:00:00');
       const curr = new Date(sorted[i].date + 'T12:00:00');
-      if (Math.floor((prev - curr) / 86400000) === 1) { streak++; }
+      const d = Math.floor((prev - curr) / 86400000);
+      if (d === 1 || isRestDayGap(prev, curr)) { streak++; }
       else break;
     }
   }
@@ -3141,7 +3205,8 @@ function calcStreak() {
   for (let i = 1; i < sorted.length; i++) {
     const prev = new Date(sorted[i-1].date + 'T12:00:00');
     const curr = new Date(sorted[i].date + 'T12:00:00');
-    if (Math.floor((prev - curr) / 86400000) === 1) { tempStreak++; }
+    const d = Math.floor((prev - curr) / 86400000);
+    if (d === 1 || isRestDayGap(prev, curr)) { tempStreak++; }
     else { record = Math.max(record, tempStreak); tempStreak = 1; }
   }
   record = Math.max(record, tempStreak, streak);
@@ -3156,21 +3221,62 @@ function renderStreak() {
   document.getElementById('streakLastDay').textContent = s.lastDay !== '—' ? s.lastDay.slice(5).replace('-','/') : '—';
   document.getElementById('streakFire') && (document.getElementById('streakFire').textContent = s.current >= 7 ? '🔥' : s.current >= 3 ? '⚡' : '💤');
 
-  // Today's hours progress toward 10h
+  // Today's hours progress toward configured minimum
+  const minH = getStreakMinHours();
   const todayStr = today();
   const todayDays = state.days.filter(d => d.date === todayStr);
   const todayHours = todayDays.reduce((a,d) => a + (d.totalHours || 0), 0);
-  const pct = Math.min((todayHours / STREAK_MIN_HOURS) * 100, 100);
-  const remaining = Math.max(STREAK_MIN_HOURS - todayHours, 0);
+  const pct = Math.min((todayHours / minH) * 100, 100);
+  const remaining = Math.max(minH - todayHours, 0);
   const barEl = document.getElementById('streakTodayBar');
   const lblEl = document.getElementById('streakTodayLabel');
   const msgEl = document.getElementById('streakTodayMsg');
   if (barEl) barEl.style.width = pct + '%';
   if (barEl) barEl.style.background = pct >= 100 ? 'linear-gradient(90deg,var(--green),#5d9478)' : 'linear-gradient(90deg,var(--gold),var(--rose))';
-  if (lblEl) lblEl.textContent = `${fmtH(todayHours)} / ${STREAK_MIN_HOURS}h`;
+  if (lblEl) lblEl.textContent = `${fmtH(todayHours)} / ${minH}h`;
   if (lblEl) lblEl.style.color = pct >= 100 ? 'var(--green)' : 'var(--gold)';
-  if (msgEl) msgEl.textContent = pct >= 100 ? '✅ ¡Día completo! Cuenta para la racha 🔥' : `Faltan ${fmtH(remaining)} para contar el día 🎯`;
-  if (msgEl) msgEl.style.color = pct >= 100 ? 'var(--green)' : 'var(--textMid)';
+
+  // Rest day label in streak label
+  const restDay = getStreakRestDay();
+  const DAYS_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const labelEl = document.querySelector('.streak-label');
+  if (labelEl) labelEl.textContent = `días seguidos (≥${minH}h)`;
+  const restLbl = document.getElementById('streakRestLabel');
+  if (restLbl) restLbl.textContent = restDay != null ? `🌙 Descanso: ${DAYS_SHORT[restDay]}` : '';
+
+  // Today is rest day message
+  const todayIsRest = restDay != null && new Date().getDay() === restDay;
+  if (msgEl) {
+    if (todayIsRest) {
+      msgEl.textContent = `🌙 Hoy es tu día de descanso — la racha está protegida`;
+      msgEl.style.color = 'var(--lilacDark)';
+    } else {
+      msgEl.textContent = pct >= 100 ? '✅ ¡Día completo! Cuenta para la racha 🔥' : `Faltan ${fmtH(remaining)} para contar el día 🎯`;
+      msgEl.style.color = pct >= 100 ? 'var(--green)' : 'var(--textMid)';
+    }
+  }
+}
+
+function toggleStreakSettings() {
+  const f = document.getElementById('streakSettingsForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    document.getElementById('streakHoursInput').value = getStreakMinHours();
+    const rd = getStreakRestDay();
+    document.getElementById('streakRestDaySelect').value = rd != null ? String(rd) : '';
+  }
+}
+
+function saveStreakSettingsUI() {
+  const h = parseFloat(document.getElementById('streakHoursInput').value);
+  if (isNaN(h) || h <= 0 || h > 24) { alert('Ingresa un número entre 1 y 24.'); return; }
+  state.streakMinHours = h;
+  const rdVal = document.getElementById('streakRestDaySelect').value;
+  state.streakRestDay = rdVal !== '' ? parseInt(rdVal) : null;
+  saveStreakSettings();
+  toggleStreakSettings();
+  renderStreak();
+  renderAll();
 }
 
 // ============================================================
