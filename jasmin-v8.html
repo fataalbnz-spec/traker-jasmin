@@ -797,8 +797,13 @@
 
     <div class="form-grid-2" style="margin-bottom:14px">
       <div>
-        <label class="form-label">⏱️ Horas trabajadas</label>
-        <input type="number" class="form-input" id="hoursWorked" placeholder="0.0" step="0.5" min="0" max="24">
+        <label class="form-label">⏱️ Tiempo trabajado</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" class="form-input" id="hoursWorkedH" placeholder="0" min="0" max="23" style="text-align:center">
+          <span style="color:var(--textMid);font-size:13px;flex-shrink:0">h</span>
+          <input type="number" class="form-input" id="hoursWorkedM" placeholder="0" min="0" max="59" style="text-align:center">
+          <span style="color:var(--textMid);font-size:13px;flex-shrink:0">min</span>
+        </div>
       </div>
       <div>
         <label class="form-label">💰 Ingreso total ($)</label>
@@ -1777,7 +1782,11 @@ function onDateChange() {
   saveBtn.textContent = existing ? 'Actualizar día' : 'Guardar día';
 
   if (existing) {
-    document.getElementById('hoursWorked').value = existing.totalHours || '';
+    const totalH = existing.totalHours || 0;
+    const hh = Math.floor(totalH);
+    const mm = Math.round((totalH - hh) * 60);
+    document.getElementById('hoursWorkedH').value = hh || '';
+    document.getElementById('hoursWorkedM').value = mm || '';
     document.getElementById('dayEarnings').value = existing.totalEarnings || '';
     state.period = existing.period || false;
     refreshPeriodBtn();
@@ -1787,7 +1796,8 @@ function onDateChange() {
     }
     document.getElementById('dayNotes').value = existing.notes || '';
   } else {
-    document.getElementById('hoursWorked').value = '';
+    document.getElementById('hoursWorkedH').value = '';
+    document.getElementById('hoursWorkedM').value = '';
     document.getElementById('dayEarnings').value = '';
     state.period = false;
     refreshPeriodBtn();
@@ -1893,14 +1903,16 @@ function deleteExtraIncome(dayId, idx) {
 function saveBlock() {
   const date = document.getElementById('regDate').value;
   if (!date) { alert('Selecciona una fecha'); return; }
-  const hoursWorked = parseFloat(document.getElementById('hoursWorked').value) || 0;
+  const h = parseInt(document.getElementById('hoursWorkedH').value) || 0;
+  const m = parseInt(document.getElementById('hoursWorkedM').value) || 0;
+  const hoursWorked = +(h + m / 60).toFixed(4);
   const dayEarnings = parseFloat(document.getElementById('dayEarnings').value) || 0;
   const notes = document.getElementById('dayNotes').value;
   const period = state.period;
   const periodIntensity = period ? parseInt(document.getElementById('periodRange').value) : 0;
 
   if (hoursWorked <= 0 && dayEarnings <= 0) {
-    alert('Ingresa al menos las horas trabajadas o el ingreso del día');
+    alert('Ingresa al menos el tiempo trabajado o el ingreso del día');
     return;
   }
 
@@ -1934,7 +1946,8 @@ function saveBlock() {
   renderAll();
 
   // Reset form
-  document.getElementById('hoursWorked').value = '';
+  document.getElementById('hoursWorkedH').value = '';
+  document.getElementById('hoursWorkedM').value = '';
   document.getElementById('dayEarnings').value = '';
   document.getElementById('dayNotes').value = '';
   state.period = false;
