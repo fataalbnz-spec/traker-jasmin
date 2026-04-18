@@ -236,21 +236,41 @@
   .tag-rose { color: var(--roseDark); background: var(--roseLight); }
   .tag-mobile { color: var(--mobileDark); background: var(--mobileLight); }
 
-  /* Block card */
-  .block-card { background: var(--bgDark); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); }
-  .block-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .block-time { color: var(--lilacDark); font-size: 14px; font-weight: bold; }
-  .block-device-badge { font-size: 11px; padding: 1px 6px; border-radius: 8px; }
-  .block-sub { color: var(--textLight); font-size: 11px; }
 
-
-
-  /* Edit end time */
-  .edit-endtime { margin-bottom: 10px; padding: 12px; background: var(--lilacLight); border-radius: 10px; border: 1px solid var(--lilac); }
-  .edit-endtime-title { font-size: 10px; color: var(--lilacDark); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-  .edit-endtime-row { display: flex; gap: 8px; align-items: flex-end; }
-
-
+  /* ── EMOCIONES ── */
+  .emo-checkin-card { background: var(--bgCard); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .emo-checkin-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--lilacDark); margin-bottom: 14px; }
+  .emo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .emo-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--border); background: var(--bgDark); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .emo-btn:active { transform: scale(0.96); background: var(--lilacLight); border-color: var(--lilac); }
+  .emo-btn-custom { border-style: dashed; color: var(--textLight); }
+  .emo-emoji { font-size: 24px; line-height: 1; }
+  .emo-name { font-size: 10px; color: var(--textMid); letter-spacing: 0.5px; text-align: center; }
+  .emo-checkin-done { display: flex; align-items: center; gap: 12px; background: var(--lilacLight); border: 1px solid var(--lilac); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+  .emo-checkin-icon { font-size: 26px; flex-shrink: 0; }
+  .emo-checkin-label { font-size: 10px; color: var(--lilacDark); letter-spacing: 2px; text-transform: uppercase; }
+  .emo-checkin-result { font-size: 16px; color: var(--text); margin-top: 2px; }
+  .emo-clear-btn { margin-left: auto; background: transparent; border: 1px solid var(--lilac); border-radius: 8px; color: var(--lilacDark); cursor: pointer; padding: 4px 10px; font-size: 13px; font-family: inherit; flex-shrink: 0; }
+  .emo-section-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--lilacDark); margin: 20px 0 12px; }
+  .emo-history { display: flex; flex-direction: column; gap: 8px; }
+  .emo-history-row { display: flex; align-items: center; gap: 10px; background: var(--bgCard); border-radius: 12px; padding: 10px 12px; border: 1px solid var(--borderLight); }
+  .emo-hist-date { font-size: 11px; color: var(--textMid); font-weight: bold; min-width: 32px; text-align: center; line-height: 1.4; }
+  .emo-hist-pair { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .emo-hist-chip { font-size: 20px; line-height: 1; }
+  .emo-hist-labels { display: flex; gap: 4px; align-items: center; font-size: 10px; color: var(--textMid); flex-wrap: wrap; margin-left: auto; text-align: right; }
+  .emo-analysis-section { background: var(--bgCard); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .emo-analysis-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lilacDark); margin-bottom: 12px; }
+  .emo-trend-bars { display: flex; gap: 16px; justify-content: center; align-items: flex-end; height: 90px; margin-bottom: 14px; }
+  .emo-trend-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .emo-trend-val { font-size: 14px; font-weight: bold; }
+  .emo-trend-bar-wrap { width: 100%; height: 60px; background: var(--bgDark); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+  .emo-trend-lbl { font-size: 9px; color: var(--textLight); letter-spacing: 0.5px; text-align: center; }
+  .emo-insight { background: var(--goldLight); border: 1px solid var(--gold); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--text); line-height: 1.6; margin-bottom: 4px; }
+  .emo-analysis-row { margin-bottom: 12px; }
+  .emo-analysis-label { font-size: 12px; color: var(--text); margin-bottom: 5px; }
+  .emo-bar-row { display: flex; height: 8px; border-radius: 6px; overflow: hidden; background: var(--bgDark); margin-bottom: 3px; }
+  .emo-bar-seg { height: 100%; transition: width 0.4s; }
+  .emo-bar-legend { display: flex; gap: 10px; font-size: 10px; }
 
   /* Confirm delete */
   .confirm-delete-wrapper { display: inline-flex; align-items: center; gap: 6px; background: #fff3f3; border: 1px solid #f5c0c0; border-radius: 10px; padding: 4px 8px; }
@@ -610,6 +630,7 @@
   <button class="tab-btn" onclick="switchTab('historico')">📈 Histórico</button>
   <button class="tab-btn" onclick="switchTab('add')">➕ Registrar</button>
   <button class="tab-btn" onclick="switchTab('sessions')">📋 Historial</button>
+  <button class="tab-btn" onclick="switchTab('emociones')">🌸 Ánimo</button>
 </div>
 
 <!-- TAB: DASHBOARD -->
@@ -617,7 +638,7 @@
   <div id="dashEmpty" class="empty-state" style="display:none">
     <div style="font-size:40px;margin-bottom:16px">🌸</div>
     <div style="color:var(--lilacDark);font-style:italic;font-size:18px;margin-bottom:8px">Todo empieza aquí</div>
-    Registra tus primeras franjas<br>para ver tus patrones.
+    Registra tus primeros días<br>para ver tus patrones.
   </div>
   <div id="dashContent" style="display:none">
     <div class="dashboard-grid">
@@ -815,6 +836,10 @@
   <div id="sessionList"></div>
 </div>
 
+<!-- TAB: EMOCIONES -->
+<div class="tab-content" id="tab-emociones">
+  <div id="emocionesContent"></div>
+</div>
 
 <script>
 // ============================================================
@@ -826,12 +851,28 @@ const MOOD_EMOJI = ["😴","😕","😐","😊","🔥"];
 const PERIOD_LABELS = ["Sin dolor","Leve","Moderado","Fuerte","Intenso 🥵"];
 const MOBILE_TARGET = 10;
 
+const EMOTIONS = [
+  { key:'amada',        emoji:'🥰', label:'Amada',        valence: 1 },
+  { key:'entusiasmada', emoji:'🤩', label:'Entusiasmada', valence: 1 },
+  { key:'optimista',    emoji:'✨', label:'Optimista',     valence: 1 },
+  { key:'proactiva',    emoji:'💪', label:'Proactiva',     valence: 1 },
+  { key:'sorprendida',  emoji:'😮', label:'Sorprendida',   valence: 0 },
+  { key:'indiferente',  emoji:'😐', label:'Indiferente',   valence: 0 },
+  { key:'insegura',     emoji:'😟', label:'Insegura',      valence:-1 },
+  { key:'frustrada',    emoji:'😤', label:'Frustrada',     valence:-1 },
+  { key:'decepcionada', emoji:'😞', label:'Decepcionada',  valence:-1 },
+  { key:'arrepentida',  emoji:'😔', label:'Arrepentida',   valence:-1 },
+  { key:'herida',       emoji:'💔', label:'Herida',        valence:-1 },
+  { key:'rechazada',    emoji:'🥺', label:'Rechazada',     valence:-1 },
+];
+
 let state = {
   days: [],
   weeklyGoal: 200,
   monthlyGoal: 800,
   weeklyHistory: [],
   monthlyHistory: [],
+  emotions: [],
   fromMobile: false,
   activity: { gym: false, stretch: false, park: false },
   period: false,
@@ -844,9 +885,8 @@ let weekChart = null, monthChart = null, dayChart = null, domChart = null, perio
 let histViewPeriod = 'week'; // 'week' | 'month' | '3month'
 let histViewOffset = 0;      // 0 = actual, -1 = anterior, etc.
 let periodMetric   = 'both'; // 'both' | 'earnings' | 'hours'
-let expandedDay = null, expandedMonth = null;
+let expandedMonth = null;
 let userClosedMonth = false;
-let editingEndTime = null;
 let confirmDeleteState = {};
 let pendingExtraIncomes = []; // ingresos extra pendientes antes de guardar el día
 let selectedExtraTag = '';
@@ -1016,6 +1056,7 @@ async function driveDownload() {
   if (data.weeklyHistory)  state.weeklyHistory  = data.weeklyHistory;
   if (data.monthlyHistory) state.monthlyHistory = data.monthlyHistory;
   if (data.withdrawals)    state.withdrawals    = data.withdrawals;
+  if (data.emotions)       state.emotions       = data.emotions;
   saveLocal();
 }
 
@@ -1023,7 +1064,7 @@ async function driveUpload() {
   const payload = JSON.stringify({
     days: state.days, weeklyGoal: state.weeklyGoal, monthlyGoal: state.monthlyGoal,
     weeklyHistory: state.weeklyHistory, monthlyHistory: state.monthlyHistory,
-    withdrawals: state.withdrawals || [],
+    withdrawals: state.withdrawals || [], emotions: state.emotions || [],
     lastSync: new Date().toISOString()
   });
 
@@ -1101,6 +1142,7 @@ function saveLocal() {
     localStorage.setItem('lj_days_v1', JSON.stringify(state.days));
     localStorage.setItem('lj_weekly_goal', String(state.weeklyGoal));
     localStorage.setItem('lj_monthly_goal', String(state.monthlyGoal));
+    localStorage.setItem('lj_emotions_v1', JSON.stringify(state.emotions));
   } catch(e) {}
   rebuildHistory();
 }
@@ -1117,6 +1159,8 @@ function loadData() {
     if (wh) state.weeklyHistory = JSON.parse(wh);
     const mh = localStorage.getItem('lj_monthly_history_v1');
     if (mh) state.monthlyHistory = JSON.parse(mh);
+    const em = localStorage.getItem('lj_emotions_v1');
+    if (em) state.emotions = JSON.parse(em);
   } catch(e) {}
   loadStreakSettings();
 }
@@ -1950,7 +1994,6 @@ function renderSessions() {
 
     // Contenido de días (solo si abierto)
     const daysHtml = isOpen ? days.map(day => {
-      const isExpanded = expandedDay === day.id;
       const actTags = [
         day.activity?.gym ? '<span class="tag tag-lilac">💪 gym</span>' : '',
         day.activity?.stretch ? '<span class="tag tag-lilac">🧘‍♀️</span>' : '',
@@ -1959,65 +2002,18 @@ function renderSessions() {
         (day.mobileHours||0)>0 ? `<span class="tag tag-mobile">📱 ${fmtH(day.mobileHours)}</span>` : '',
       ].filter(Boolean).join('');
 
-      const blocksHtml = isExpanded ? day.blocks.map(block=>{
-        const st=parseTimeVal(block.startTime), et=parseTimeVal(block.endTime);
-        const isEditingThis = editingEndTime === block.id;
-
-        const editEndHtml = isEditingThis ? `
-          <div class="edit-endtime">
-            <div class="edit-endtime-title">Modificar hora de salida</div>
-            <div class="edit-endtime-row">
-              <div style="flex:1">
-                <select class="form-input" onchange="updateBlockEndTime(${day.id},${block.id},this.value)">
-                  ${TIME_SLOTS.map(({h,m,value})=>`<option value="${value}" ${block.endTime===value?'selected':''}>${fmtTime(h,m)}</option>`).join('')}
-                </select>
-              </div>
-              <button onclick="editingEndTime=null;renderSessions()" style="padding:11px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bgCard);color:var(--textMid);font-size:12px;cursor:pointer;font-family:inherit">Cerrar</button>
-            </div>
-            <div style="font-size:11px;color:var(--green);margin-top:8px">Se guarda automáticamente al seleccionar.</div>
-          </div>
-        ` : '';
-
-        const devBadgeStyle = block.fromMobile
-          ? `color:var(--mobileDark);background:var(--mobileLight);border:1px solid var(--mobile)`
-          : `color:var(--textLight);background:var(--bgCard);border:1px solid var(--border)`;
-
-        return `
-          <div class="block-card">
-            <div class="block-header">
-              <div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  <div class="block-time">${fmtTime(st.h,st.m)} → ${fmtTime(et.h,et.m)}</div>
-                  <span class="block-device-badge" style="${devBadgeStyle}">${block.fromMobile?'📱 cel':'💻 pc'}</span>
-                </div>
-                <div class="block-sub">${block.durationHours}h</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <button onclick="toggleEditEndTime(${block.id})" style="background:${isEditingThis?'var(--lilacLight)':'transparent'};border:1px solid ${isEditingThis?'var(--lilac)':'var(--border)'};border-radius:8px;color:${isEditingThis?'var(--lilacDark)':'var(--textLight)'};cursor:pointer;padding:4px 8px;font-size:11px;font-family:inherit">✏️</button>
-                ${confirmDeleteBtn(`deleteBlock(${day.id},${block.id})`,'','✕',false)}
-              </div>
-            </div>
-            ${editEndHtml}
-          </div>
-        `;
-      }).join('') : '';
-
       return `
         <div class="day-card">
           <div class="day-header">
             <div>
               <div class="day-title">${DAYS_ES[day.dayOfWeek]} ${day.date.slice(8)} · ${day.date.slice(5,7)}/${day.date.slice(0,4)}</div>
-              <div class="day-sub">${day.blocks.length} franja${day.blocks.length!==1?'s':''} · ${fmtH(day.totalHours)} · ${MOOD_EMOJI[day.mood-1]}</div>
+              <div class="day-sub">${fmtH(day.totalHours)} · ${MOOD_EMOJI[day.mood-1]}</div>
               <div class="day-tags">${actTags}</div>
             </div>
             <div>
               <div class="day-earn">${fmt(day.totalEarnings)}</div>
             </div>
           </div>
-          <button class="btn-expand" onclick="toggleExpandDay(${day.id})">
-            ${isExpanded?'▲ ocultar franjas':'▼ ver franjas'}
-          </button>
-          ${isExpanded ? `<div style="margin-top:10px">${blocksHtml}</div>` : ''}
           ${day.notes ? `<div class="day-notes">${day.notes}</div>` : ''}
           ${day.extraIncomes && day.extraIncomes.length ? `
             <div style="margin-top:10px;background:var(--bgCard);border:1px solid var(--border);border-radius:10px;padding:10px">
@@ -2026,7 +2022,7 @@ function renderSessions() {
                 <div class="extra-income-day-row">
                   <span class="extra-income-tag">${e.tag}</span>
                   <span class="extra-income-amount" style="margin-left:auto">${fmt(e.amount)}</span>
-                  ${isExpanded ? `<button class="extra-income-del" onclick="deleteExtraIncome(${day.id},${ei})">✕</button>` : ''}
+                  <button class="extra-income-del" onclick="deleteExtraIncome(${day.id},${ei})">✕</button>
                 </div>
               `).join('')}
               <div style="text-align:right;font-size:11px;color:var(--textLight);margin-top:6px">Total extras: ${fmt(day.extraIncomes.reduce((a,e)=>a+e.amount,0))}</div>
@@ -2080,11 +2076,6 @@ function startConfirm(id, action) {
 // ============================================================
 // ACTIONS
 // ============================================================
-function toggleExpandDay(id) {
-  expandedDay = expandedDay === id ? null : id;
-  renderSessions();
-}
-
 function toggleExpandMonth(mk) {
   if (expandedMonth === mk) {
     expandedMonth = null;
@@ -2093,33 +2084,7 @@ function toggleExpandMonth(mk) {
     expandedMonth = mk;
     userClosedMonth = false;
   }
-  expandedDay = null;
   renderSessions();
-}
-
-function toggleEditEndTime(id) {
-  editingEndTime = editingEndTime === id ? null : id;
-  renderSessions();
-}
-
-function updateBlockEndTime(dayId, blockId, newEndTime) {
-  state.days = state.days.map(d=>{
-    if (d.id!==dayId) return d;
-    const blocks = d.blocks.map(b=>b.id!==blockId?b:{...b,endTime:newEndTime,durationHours:dur(b.startTime,newEndTime)});
-    return { ...d, blocks, totalHours:blocks.reduce((a,b)=>a+b.durationHours,0), mobileHours:blocks.filter(b=>b.fromMobile).reduce((a,b)=>a+b.durationHours,0) };
-  });
-  editingEndTime = null;
-  saveData(); renderAll();
-}
-
-function deleteBlock(dayId, blockId) {
-  state.days = state.days.map(d=>{
-    if (d.id!==dayId) return d;
-    const blocks = d.blocks.filter(b=>b.id!==blockId);
-    if (!blocks.length) return null;
-    return { ...d, blocks, totalHours:blocks.reduce((a,b)=>a+b.durationHours,0), mobileHours:blocks.filter(b=>b.fromMobile).reduce((a,b)=>a+b.durationHours,0) };
-  }).filter(Boolean);
-  saveData(); renderAll();
 }
 
 function deleteDay(dayId) {
@@ -2156,7 +2121,7 @@ function saveGoal(type) {
 // ============================================================
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-    const tabs=['dashboard','historico','add','sessions'];
+    const tabs=['dashboard','historico','add','sessions','emociones'];
     b.className = 'tab-btn' + (tabs[i]===name?' active':'');
   });
   document.querySelectorAll('.tab-content').forEach(c=>c.className='tab-content');
@@ -2165,6 +2130,7 @@ function switchTab(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='historico') renderHistorico();
   if (name==='sessions') renderSessions();
+  if (name==='emociones') renderEmociones();
 }
 
 // ============================================================
@@ -2179,6 +2145,7 @@ function renderAll() {
   if (activeTab==='dashboard') renderDashboard();
   if (activeTab==='historico') renderHistorico();
   if (activeTab==='sessions') renderSessions();
+  if (activeTab==='emociones') renderEmociones();
 }
 
 // ============================================================
@@ -2273,6 +2240,237 @@ function renderWithdrawals() {
         </div>
       </div>`;
   }).join('');
+}
+
+// ============================================================
+// EMOCIONES
+// ============================================================
+
+function getEmotionByKey(key) {
+  return EMOTIONS.find(e => e.key === key) || { emoji: '✨', label: key, valence: 0 };
+}
+
+function todayEmotionRecord() {
+  const d = today();
+  return state.emotions.find(e => e.date === d) || null;
+}
+
+function saveEmotion(moment, key, customLabel) {
+  const d = today();
+  const existing = state.emotions.find(e => e.date === d);
+  const entry = key === 'custom'
+    ? { key: 'custom', label: customLabel || 'Otra', emoji: '💭', valence: 0 }
+    : getEmotionByKey(key);
+  const record = { ...(existing || { date: d }), [moment]: { key: entry.key, label: entry.label, emoji: entry.emoji, valence: entry.valence } };
+  if (existing) {
+    state.emotions = state.emotions.map(e => e.date === d ? record : e);
+  } else {
+    state.emotions.unshift(record);
+  }
+  saveData();
+  renderEmociones();
+}
+
+function renderEmotionGrid(moment) {
+  const d = today();
+  const rec = state.emotions.find(e => e.date === d);
+  const current = rec?.[moment];
+  const label = moment === 'morning' ? '¿Cómo amaneciste hoy?' : '¿Cómo terminas el día?';
+  const icon  = moment === 'morning' ? '🌅' : '🌙';
+
+  if (current) {
+    return `
+      <div class="emo-checkin-done">
+        <div class="emo-checkin-icon">${icon}</div>
+        <div>
+          <div class="emo-checkin-label">${label}</div>
+          <div class="emo-checkin-result">${current.emoji} ${current.label}</div>
+        </div>
+        <button onclick="clearEmotion('${moment}')" class="emo-clear-btn">✎</button>
+      </div>`;
+  }
+
+  return `
+    <div class="emo-checkin-card">
+      <div class="emo-checkin-title">${icon} ${label}</div>
+      <div class="emo-grid">
+        ${EMOTIONS.map(e => `
+          <button class="emo-btn" onclick="saveEmotion('${moment}','${e.key}')">
+            <span class="emo-emoji">${e.emoji}</span>
+            <span class="emo-name">${e.label}</span>
+          </button>`).join('')}
+        <button class="emo-btn emo-btn-custom" onclick="showCustomEmotion('${moment}')">
+          <span class="emo-emoji">💭</span>
+          <span class="emo-name">Otra...</span>
+        </button>
+      </div>
+      <div id="customEmoForm_${moment}" style="display:none;margin-top:10px">
+        <input type="text" id="customEmoInput_${moment}" class="form-input" placeholder="Escribe cómo te sientes..." maxlength="30" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px">
+          <button onclick="saveCustomEmotion('${moment}')" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--lilac),var(--rose));color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
+          <button onclick="hideCustomEmotion('${moment}')" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function clearEmotion(moment) {
+  const d = today();
+  state.emotions = state.emotions.map(e => {
+    if (e.date !== d) return e;
+    const upd = { ...e };
+    delete upd[moment];
+    return upd;
+  }).filter(e => e.morning || e.evening);
+  saveData();
+  renderEmociones();
+}
+
+function showCustomEmotion(moment) {
+  document.getElementById(`customEmoForm_${moment}`).style.display = 'block';
+  document.getElementById(`customEmoInput_${moment}`).focus();
+}
+function hideCustomEmotion(moment) {
+  document.getElementById(`customEmoForm_${moment}`).style.display = 'none';
+}
+function saveCustomEmotion(moment) {
+  const val = document.getElementById(`customEmoInput_${moment}`).value.trim();
+  if (!val) return;
+  saveEmotion(moment, 'custom', val);
+}
+
+function renderEmotionHistory() {
+  const recent = [...state.emotions].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 14);
+  if (!recent.length) return '<div style="text-align:center;padding:24px;color:var(--textLight);font-size:13px">Aún no hay registros de ánimo.</div>';
+
+  return `
+    <div class="emo-history">
+      ${recent.map(r => {
+        const m = r.morning, ev = r.evening;
+        const dayName = DAYS_ES[new Date(r.date+'T12:00:00').getDay()];
+        const dateShort = r.date.slice(8) + '/' + r.date.slice(5,7);
+        let arrow = '', arrowColor = 'var(--textLight)';
+        if (m && ev) {
+          if (ev.valence > m.valence) { arrow = '↑'; arrowColor = 'var(--green)'; }
+          else if (ev.valence < m.valence) { arrow = '↓'; arrowColor = 'var(--roseDark)'; }
+          else { arrow = '→'; arrowColor = 'var(--lilacDark)'; }
+        }
+        return `
+          <div class="emo-history-row">
+            <div class="emo-hist-date">${dayName}<br><span style="font-size:10px;color:var(--textLight)">${dateShort}</span></div>
+            <div class="emo-hist-pair">
+              <span class="emo-hist-chip" title="${m?.label||'—'}">${m ? m.emoji : '·'}</span>
+              ${arrow ? `<span style="font-weight:bold;color:${arrowColor};font-size:14px">${arrow}</span>` : '<span style="color:var(--textLight);font-size:11px">···</span>'}
+              <span class="emo-hist-chip" title="${ev?.label||'—'}">${ev ? ev.emoji : '·'}</span>
+            </div>
+            <div class="emo-hist-labels">
+              <span>${m?.label||'—'}</span>
+              <span style="color:var(--textLight)">→</span>
+              <span>${ev?.label||'—'}</span>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderEmotionAnalysis() {
+  const pairs = state.emotions.filter(e => e.morning && e.evening);
+  if (pairs.length < 3) return `<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px;font-style:italic">Necesitas al menos 3 días con ambos registros para ver el análisis.</div>`;
+
+  // Tendencia general
+  let mejoraron = 0, igual = 0, empeoraron = 0;
+  pairs.forEach(p => {
+    const diff = p.evening.valence - p.morning.valence;
+    if (diff > 0) mejoraron++;
+    else if (diff < 0) empeoraron++;
+    else igual++;
+  });
+  const total = pairs.length;
+  const pMejor = Math.round(mejoraron/total*100);
+  const pIgual = Math.round(igual/total*100);
+  const pPeor  = Math.round(empeoraron/total*100);
+
+  // Por emoción de mañana: ¿cómo termina el día?
+  const byMorning = {};
+  pairs.forEach(p => {
+    const mk = p.morning.label;
+    if (!byMorning[mk]) byMorning[mk] = { emoji: p.morning.emoji, total:0, better:0, same:0, worse:0 };
+    const diff = p.evening.valence - p.morning.valence;
+    byMorning[mk].total++;
+    if (diff > 0) byMorning[mk].better++;
+    else if (diff < 0) byMorning[mk].worse++;
+    else byMorning[mk].same++;
+  });
+  const morningRows = Object.entries(byMorning)
+    .sort((a,b) => b[1].total - a[1].total)
+    .map(([label, d]) => {
+      const pB = Math.round(d.better/d.total*100);
+      const pS = Math.round(d.same/d.total*100);
+      const pW = Math.round(d.worse/d.total*100);
+      return `
+        <div class="emo-analysis-row">
+          <div class="emo-analysis-label">${d.emoji} ${label} <span style="color:var(--textLight);font-size:10px">(${d.total}x)</span></div>
+          <div class="emo-bar-row">
+            <div class="emo-bar-seg" style="width:${pB}%;background:var(--green)" title="Mejoró ${pB}%"></div>
+            <div class="emo-bar-seg" style="width:${pS}%;background:var(--lilac)" title="Igual ${pS}%"></div>
+            <div class="emo-bar-seg" style="width:${pW}%;background:var(--rose)" title="Empeoró ${pW}%"></div>
+          </div>
+          <div class="emo-bar-legend">
+            <span style="color:var(--green)">↑${pB}%</span>
+            <span style="color:var(--lilacDark)">→${pS}%</span>
+            <span style="color:var(--roseDark)">↓${pW}%</span>
+          </div>
+        </div>`;
+    }).join('');
+
+  // Insight textual
+  const best = Object.entries(byMorning).sort((a,b) => (b[1].better/b[1].total) - (a[1].better/a[1].total))[0];
+  const worst = Object.entries(byMorning).sort((a,b) => (b[1].worse/b[1].total) - (a[1].worse/a[1].total))[0];
+  let insight = '';
+  if (best && best[1].total >= 2) insight += `Cuando amaneces <strong>${best[1].emoji} ${best[0]}</strong>, el ${Math.round(best[1].better/best[1].total*100)}% de las veces terminas mejor. `;
+  if (worst && worst[1].total >= 2 && worst[0] !== best?.[0]) insight += `Ojo: arrancando <strong>${worst[1].emoji} ${worst[0]}</strong> el día suele bajar en el ${Math.round(worst[1].worse/worst[1].total*100)}% de los casos.`;
+
+  return `
+    <div class="emo-analysis-section">
+      <div class="emo-analysis-title">📊 Tendencia general · ${total} días</div>
+      <div class="emo-trend-bars">
+        <div class="emo-trend-item">
+          <div class="emo-trend-val" style="color:var(--green)">${pMejor}%</div>
+          <div class="emo-trend-bar-wrap"><div style="height:${pMejor}%;background:var(--green);border-radius:4px 4px 0 0"></div></div>
+          <div class="emo-trend-lbl">↑ Mejoraron</div>
+        </div>
+        <div class="emo-trend-item">
+          <div class="emo-trend-val" style="color:var(--lilacDark)">${pIgual}%</div>
+          <div class="emo-trend-bar-wrap"><div style="height:${pIgual}%;background:var(--lilac);border-radius:4px 4px 0 0"></div></div>
+          <div class="emo-trend-lbl">→ Igual</div>
+        </div>
+        <div class="emo-trend-item">
+          <div class="emo-trend-val" style="color:var(--roseDark)">${pPeor}%</div>
+          <div class="emo-trend-bar-wrap"><div style="height:${pPeor}%;background:var(--rose);border-radius:4px 4px 0 0"></div></div>
+          <div class="emo-trend-lbl">↓ Bajaron</div>
+        </div>
+      </div>
+      ${insight ? `<div class="emo-insight">💡 ${insight}</div>` : ''}
+      <div class="emo-analysis-title" style="margin-top:18px">Empezar el día sintiéndome...</div>
+      <div style="font-size:10px;color:var(--textLight);margin-bottom:10px;display:flex;gap:12px">
+        <span>🟢 mejoró &nbsp;🟣 igual &nbsp;🔴 empeoró</span>
+      </div>
+      ${morningRows}
+    </div>`;
+}
+
+function renderEmociones() {
+  const el = document.getElementById('emocionesContent');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:20px">Ánimo del día 🌸</div>
+    ${renderEmotionGrid('morning')}
+    ${renderEmotionGrid('evening')}
+    <div class="emo-section-title">Últimos 14 días</div>
+    ${renderEmotionHistory()}
+    <div class="emo-section-title">Análisis de patrones</div>
+    ${renderEmotionAnalysis()}
+  `;
 }
 
 // ============================================================
