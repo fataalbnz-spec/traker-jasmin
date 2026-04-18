@@ -1504,13 +1504,17 @@ function renderPeriodNav() {
       barWeekends.push(d.getDay() === 0 || d.getDay() === 6);
     }
   } else if (histViewPeriod === 'month') {
-    inRange.sort((a,b) => a.date.localeCompare(b.date)).forEach(d => {
-      labels.push(parseInt(d.date.slice(8)));
-      dataEarn.push(+d.totalEarnings.toFixed(2));
-      dataHours.push(+d.totalHours.toFixed(1));
-      const dow = new Date(d.date + 'T12:00:00').getDay();
+    const cur = new Date(from);
+    while (cur <= to) {
+      const key = cur.toISOString().slice(0,10);
+      const day = inRange.find(x => x.date === key);
+      labels.push(cur.getDate());
+      dataEarn.push(day ? +day.totalEarnings.toFixed(2) : 0);
+      dataHours.push(day ? +day.totalHours.toFixed(1) : 0);
+      const dow = cur.getDay();
       barWeekends.push(dow === 0 || dow === 6);
-    });
+      cur.setDate(cur.getDate() + 1);
+    }
   } else { // 3month
     const cur = new Date(from);
     while (cur <= to) {
@@ -1519,12 +1523,10 @@ function renderPeriodNav() {
         const dt = new Date(d.date + 'T12:00:00');
         return dt >= cur && dt <= wEnd;
       });
-      if (wDays.length) {
-        labels.push(`${cur.getDate()}/${cur.getMonth()+1}`);
-        dataEarn.push(+wDays.reduce((a,d) => a + d.totalEarnings, 0).toFixed(2));
-        dataHours.push(+wDays.reduce((a,d) => a + d.totalHours, 0).toFixed(1));
-        barWeekends.push(false);
-      }
+      labels.push(`${cur.getDate()}/${cur.getMonth()+1}`);
+      dataEarn.push(+wDays.reduce((a,d) => a + d.totalEarnings, 0).toFixed(2));
+      dataHours.push(+wDays.reduce((a,d) => a + d.totalHours, 0).toFixed(1));
+      barWeekends.push(false);
       cur.setDate(cur.getDate() + 7);
     }
   }
