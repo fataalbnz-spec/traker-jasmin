@@ -478,8 +478,8 @@
   .drive-sync-dot.spinning{background:#a8c5e8;animation:spin-dot 1s linear infinite}
   .drive-sync-dot.err{background:#f5b8b0;animation:none}
   /* ── PLATFORM FILTER ── */
-  .platform-filter{display:flex;gap:7px;justify-content:center;margin:10px 0 4px;flex-wrap:wrap}
-  .pf-btn{padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--textMid);font-size:12px;font-family:inherit;cursor:pointer;font-weight:600;letter-spacing:.4px;transition:all .18s}
+  .platform-filter{display:flex;gap:6px;justify-content:center;margin:10px 0 4px;flex-wrap:nowrap}
+  .pf-btn{padding:7px 0;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--textMid);font-size:12px;font-family:inherit;cursor:pointer;font-weight:600;letter-spacing:.4px;transition:all .18s;flex:1;text-align:center}
   .pf-btn:hover{opacity:.85}
   .pf-btn.active-all{background:linear-gradient(135deg,var(--lilac),var(--rose));color:#fff;border-color:transparent}
   .pf-btn.active-jasmin{background:linear-gradient(135deg,#e03370,#c0275a);color:#fff;border-color:transparent}
@@ -738,8 +738,8 @@
   <!-- Platform filter -->
   <div class="platform-filter" id="platformFilter">
     <button class="pf-btn active-all" id="pf-all" onclick="setPlatform('all')">🌸 Todas</button>
-    <button class="pf-btn" id="pf-jasmin" onclick="setPlatform('jasmin')">🔴 LiveJasmin</button>
-    <button class="pf-btn" id="pf-stripchat" onclick="setPlatform('stripchat')">🟣 Stripchat</button>
+    <button class="pf-btn" id="pf-jasmin" onclick="setPlatform('jasmin')">🔴 Jasmin</button>
+    <button class="pf-btn" id="pf-stripchat" onclick="setPlatform('stripchat')">🟣 Strip</button>
   </div>
   <div class="stat-grid">
     <div class="stat-card" style="background:var(--roseLight)">
@@ -877,8 +877,8 @@
   <!-- Filtro de plataforma dentro del histórico -->
   <div style="display:flex;gap:7px;justify-content:center;margin-bottom:16px;flex-wrap:wrap">
     <button id="hpf-all"       onclick="setHistPlatform('all')"       class="pf-btn active-all">🌸 Todas</button>
-    <button id="hpf-jasmin"    onclick="setHistPlatform('jasmin')"    class="pf-btn">🔴 LiveJasmin</button>
-    <button id="hpf-stripchat" onclick="setHistPlatform('stripchat')" class="pf-btn">🟣 Stripchat</button>
+    <button id="hpf-jasmin"    onclick="setHistPlatform('jasmin')"    class="pf-btn">🔴 Jasmin</button>
+    <button id="hpf-stripchat" onclick="setHistPlatform('stripchat')" class="pf-btn">🟣 Strip</button>
   </div>
   <div id="histEmpty" style="text-align:center;padding:60px 20px;color:var(--textLight);font-size:14px;line-height:2;display:none">
     <div style="font-size:36px;margin-bottom:12px">📈</div>
