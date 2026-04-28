@@ -492,6 +492,9 @@
   .platform-earn-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:600}
   .platform-earn-val{font-size:18px;font-weight:700}
   @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+  .rest-day-picker{display:flex;gap:5px;justify-content:center;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+  .rest-day-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--textMid);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;flex-shrink:0}
+  .rest-day-btn.rest-day-active{background:linear-gradient(135deg,#7c3aed,#c040fb);color:#fff;border-color:transparent}
   @keyframes spin-dot{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
   /* ── LOGIN SCREEN ── */
@@ -612,6 +615,16 @@
       <button onclick="saveGoal('jasmin')" style="padding:8px 16px;border-radius:8px;border:none;background:#c0275a;color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
       <button onclick="toggleGoalEdit('jasmin')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">✕</button>
     </div>
+    <div class="rest-day-picker">
+      <span style="font-size:10px;color:var(--textMid);letter-spacing:0.5px;text-transform:uppercase;align-self:center;margin-right:2px">😴</span>
+      <button class="rest-day-btn" data-dow="1" onclick="toggleRestDay(1)">L</button>
+      <button class="rest-day-btn" data-dow="2" onclick="toggleRestDay(2)">M</button>
+      <button class="rest-day-btn" data-dow="3" onclick="toggleRestDay(3)">X</button>
+      <button class="rest-day-btn" data-dow="4" onclick="toggleRestDay(4)">J</button>
+      <button class="rest-day-btn" data-dow="5" onclick="toggleRestDay(5)">V</button>
+      <button class="rest-day-btn" data-dow="6" onclick="toggleRestDay(6)">S</button>
+      <button class="rest-day-btn" data-dow="0" onclick="toggleRestDay(0)">D</button>
+    </div>
     <div class="goal-bar-track">
       <div class="goal-bar-fill" id="jasminGoalFill" style="width:0%;background:linear-gradient(90deg,#e03370,#c0275a)"></div>
     </div>
@@ -665,6 +678,16 @@
       <button onclick="saveGoal('stripchat')" style="padding:8px 16px;border-radius:8px;border:none;background:#7c3aed;color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
       <button onclick="toggleGoalEdit('stripchat')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">✕</button>
     </div>
+    <div class="rest-day-picker">
+      <span style="font-size:10px;color:var(--textMid);letter-spacing:0.5px;text-transform:uppercase;align-self:center;margin-right:2px">😴</span>
+      <button class="rest-day-btn" data-dow="1" onclick="toggleRestDay(1)">L</button>
+      <button class="rest-day-btn" data-dow="2" onclick="toggleRestDay(2)">M</button>
+      <button class="rest-day-btn" data-dow="3" onclick="toggleRestDay(3)">X</button>
+      <button class="rest-day-btn" data-dow="4" onclick="toggleRestDay(4)">J</button>
+      <button class="rest-day-btn" data-dow="5" onclick="toggleRestDay(5)">V</button>
+      <button class="rest-day-btn" data-dow="6" onclick="toggleRestDay(6)">S</button>
+      <button class="rest-day-btn" data-dow="0" onclick="toggleRestDay(0)">D</button>
+    </div>
     <div class="goal-bar-track">
       <div class="goal-bar-fill" id="stripchatGoalFill" style="width:0%;background:linear-gradient(90deg,#7c3aed,#c040fb)"></div>
     </div>
@@ -716,6 +739,16 @@
       <input type="number" class="goal-edit-input" id="generalGoalInput" placeholder="Meta en $..." style="border-color:rgba(201,169,110,0.5)">
       <button onclick="saveGoal('general')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--gold);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
       <button onclick="toggleGoalEdit('general')" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">✕</button>
+    </div>
+    <div class="rest-day-picker">
+      <span style="font-size:10px;color:var(--textMid);letter-spacing:0.5px;text-transform:uppercase;align-self:center;margin-right:2px">😴</span>
+      <button class="rest-day-btn" data-dow="1" onclick="toggleRestDay(1)">L</button>
+      <button class="rest-day-btn" data-dow="2" onclick="toggleRestDay(2)">M</button>
+      <button class="rest-day-btn" data-dow="3" onclick="toggleRestDay(3)">X</button>
+      <button class="rest-day-btn" data-dow="4" onclick="toggleRestDay(4)">J</button>
+      <button class="rest-day-btn" data-dow="5" onclick="toggleRestDay(5)">V</button>
+      <button class="rest-day-btn" data-dow="6" onclick="toggleRestDay(6)">S</button>
+      <button class="rest-day-btn" data-dow="0" onclick="toggleRestDay(0)">D</button>
     </div>
     <div class="goal-bar-track">
       <div class="goal-bar-fill" id="generalGoalFill" style="width:0%;background:linear-gradient(90deg,var(--gold),var(--green))"></div>
@@ -1084,6 +1117,7 @@ let state = {
   destinosStripchat: [],  // legacy (migrado a cortesStripchat)
   cortesJasmin: [],       // [{ id, name, startDate, endDate, destinos:[{id,label,amount}] }]
   cortesStripchat: [],
+  restDays: [],           // [0=dom,1=lun,...,6=sab]
 };
 
 let weekChart = null, monthChart = null, dayChart = null, domChart = null, periodChart = null;
@@ -1363,6 +1397,7 @@ function saveLocal() {
     localStorage.setItem('lj_destinos_stripchat', JSON.stringify(state.destinosStripchat || []));
     localStorage.setItem('lj_cortes_jasmin',      JSON.stringify(state.cortesJasmin      || []));
     localStorage.setItem('lj_cortes_stripchat',   JSON.stringify(state.cortesStripchat   || []));
+    localStorage.setItem('lj_rest_days', JSON.stringify(state.restDays || []));
   } catch(e) {}
   rebuildHistory();
 }
@@ -1403,6 +1438,8 @@ function loadData() {
     if (cj) state.cortesJasmin = JSON.parse(cj);
     const csc = localStorage.getItem('lj_cortes_stripchat');
     if (csc) state.cortesStripchat = JSON.parse(csc);
+    const rd = localStorage.getItem('lj_rest_days');
+    if (rd) state.restDays = JSON.parse(rd);
     // Migration: si hay destinosJasmin legacy y no hay cortes, créa un corte "Corte inicial"
     if (!state.cortesJasmin.length && state.destinosJasmin.length) {
       const t = today(); const te = t;
@@ -1593,6 +1630,42 @@ function recalcTotal() {
 // ============================================================
 // RENDER HEADER
 // ============================================================
+
+// ============================================================
+// DÍAS DE DESCANSO
+// ============================================================
+function getWorkingDaysLeft(end) {
+  const restDays = state.restDays || [];
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  const endMidnight = new Date(end); endMidnight.setHours(0,0,0,0);
+  let count = 0;
+  const cur = new Date(todayMidnight);
+  while (cur <= endMidnight) {
+    if (!restDays.includes(cur.getDay())) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function toggleRestDay(dow) {
+  const rd = state.restDays || [];
+  const idx = rd.indexOf(dow);
+  if (idx === -1) rd.push(dow);
+  else rd.splice(idx, 1);
+  state.restDays = rd;
+  saveData();
+  renderRestDayBtns();
+  renderHeader();
+}
+
+function renderRestDayBtns() {
+  const rd = state.restDays || [];
+  document.querySelectorAll('.rest-day-btn').forEach(btn => {
+    const dow = parseInt(btn.dataset.dow);
+    btn.classList.toggle('rest-day-active', rd.includes(dow));
+  });
+}
+
 function renderGoalBar(platform, earned, goal, periodStart, periodDuration, dailyToday) {
   const now = new Date();
   const { start, end, isCustom } = getCustomPeriodRange(now, platform);
@@ -1626,8 +1699,12 @@ function renderGoalBar(platform, earned, goal, periodStart, periodDuration, dail
   const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
   const endMidnight = new Date(end); endMidnight.setHours(0,0,0,0);
   const daysLeft = Math.max(0, Math.round((endMidnight - todayMidnight) / 86400000));
+  const workingDaysLeft = Math.max(0, getWorkingDaysLeft(end));
   const cdEl = document.getElementById(platform+'Countdown');
-  if (cdEl) cdEl.textContent = daysLeft === 0 ? '🔔 ¡Termina hoy!' : `⏳ ${daysLeft} día${daysLeft===1?'':'s'} para el cierre`;
+  if (cdEl) {
+    const restNote = (state.restDays||[]).length > 0 && workingDaysLeft !== daysLeft ? ` (${workingDaysLeft} hábiles)` : '';
+    cdEl.textContent = daysLeft === 0 ? '🔔 ¡Termina hoy!' : `⏳ ${daysLeft} día${daysLeft===1?'':'s'} para el cierre${restNote}`;
+  }
 
   // Daily pace (only for jasmin/stripchat)
   const todayEl = document.getElementById(platform+'DailyToday');
@@ -1643,7 +1720,7 @@ function renderGoalBar(platform, earned, goal, periodStart, periodDuration, dail
         statusEl.style.color = 'var(--green)';
       } else {
         const remaining = Math.max(goal - earned, 0);
-        const daysIncl = daysLeft + 1;
+        const daysIncl = Math.max(workingDaysLeft, 1);
         const dailyNeeded = daysIncl > 0 ? remaining / daysIncl : remaining;
         neededEl.textContent = fmt(dailyNeeded);
         const diff = dailyToday - dailyNeeded;
@@ -1664,6 +1741,7 @@ function renderGoalBar(platform, earned, goal, periodStart, periodDuration, dail
 
 function renderHeader() {
   const acc = getAccumulators();
+  renderRestDayBtns();
   const year = new Date().getFullYear();
   document.getElementById('yearLabel').textContent = year;
 
@@ -3231,6 +3309,15 @@ function renderCorteBlock(platform, corte, color, colorBorder) {
       </div>`;
   } else {
     const overallPct = total > 0 ? Math.min((earned / total) * 100, 100) : 0;
+    // Días hábiles restantes del corte (respetando días de descanso)
+    const corteEndDate = new Date(corte.endDate + 'T23:59:59');
+    const workingLeft = getWorkingDaysLeft(corteEndDate);
+    const remaining = Math.max(0, total - earned);
+    const dailyMin = (overallPct < 100 && workingLeft > 0) ? remaining / workingLeft : 0;
+    const isToday = new Date() <= corteEndDate;
+    const dailyLine = (total > 0 && isToday && overallPct < 100)
+      ? `<div style="font-size:10px;color:${color};margin-top:5px;font-weight:600">📋 Mínimo diario: <strong>${fmt(dailyMin)}</strong>/día · ${workingLeft} día${workingLeft===1?'':'s'} hábil${workingLeft===1?'':'es'} restante${workingLeft===1?'':'s'}</div>`
+      : ``;
     html += `
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textMid);margin-bottom:3px">
@@ -3240,6 +3327,7 @@ function renderCorteBlock(platform, corte, color, colorBorder) {
         <div style="height:7px;background:rgba(0,0,0,0.12);border-radius:99px;overflow:hidden">
           <div style="height:100%;width:${overallPct}%;background:${accentGrad};border-radius:99px;transition:width 0.6s ease"></div>
         </div>
+        ${dailyLine}
       </div>`;
 
     distributed.forEach(d => {
