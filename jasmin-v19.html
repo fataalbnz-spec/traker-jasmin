@@ -2861,7 +2861,7 @@ let streakSettings = {
 };
 
 let streakExpanded = false;
-let collapsedCortes = new Set(); // IDs de cortes minimizados
+let expandedCortes = new Set(); // IDs de cortes expandidos (por defecto todos colapsados)
 
 function toggleStreak() {
   streakExpanded = !streakExpanded;
@@ -3843,8 +3843,8 @@ function distributeDestinos(destinos, pool) {
 }
 
 function toggleCorte(corteId) {
-  if (collapsedCortes.has(corteId)) collapsedCortes.delete(corteId);
-  else collapsedCortes.add(corteId);
+  if (expandedCortes.has(corteId)) expandedCortes.delete(corteId);
+  else expandedCortes.add(corteId);
   renderDestinos();
 }
 
@@ -3856,7 +3856,7 @@ function renderCorteBlock(platform, corte, color, colorBorder) {
   const fmtD        = s => { const d = new Date(s + 'T12:00:00'); return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(-2)}`; };
   const accentGrad  = `linear-gradient(90deg,${color},${platform==='jasmin'?'#ff6b9d':'#c040fb'})`;
   const overallPctHeader = total > 0 ? Math.min((earned / total) * 100, 100) : 0;
-  const isCollapsed = collapsedCortes.has(corte.id);
+  const isCollapsed = !expandedCortes.has(corte.id);
   const chevron = isCollapsed ? '▶' : '▼';
 
   let html = `
