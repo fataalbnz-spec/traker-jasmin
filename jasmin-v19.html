@@ -3856,6 +3856,7 @@ function renderCorteBlock(platform, corte, color, colorBorder) {
   const fmtD        = s => { const d = new Date(s + 'T12:00:00'); return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(-2)}`; };
   const accentGrad  = `linear-gradient(90deg,${color},${platform==='jasmin'?'#ff6b9d':'#c040fb'})`;
   const overallPctHeader = total > 0 ? Math.min((earned / total) * 100, 100) : 0;
+  const isCollapsed = collapsedCortes.has(corte.id);
   const chevron = isCollapsed ? '▶' : '▼';
 
   let html = `
