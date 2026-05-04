@@ -1116,18 +1116,26 @@ const PERIOD_LABELS = ["Sin dolor","Leve","Moderado","Fuerte","Intenso 🥵"];
 const MOBILE_TARGET = 10;
 
 const EMOTIONS = [
-  { key:'amada',        emoji:'🥰', label:'Amada',        valence: 1 },
-  { key:'entusiasmada', emoji:'🤩', label:'Entusiasmada', valence: 1 },
-  { key:'optimista',    emoji:'✨', label:'Optimista',     valence: 1 },
-  { key:'proactiva',    emoji:'💪', label:'Proactiva',     valence: 1 },
-  { key:'sorprendida',  emoji:'😮', label:'Sorprendida',   valence: 0 },
-  { key:'indiferente',  emoji:'😐', label:'Indiferente',   valence: 0 },
-  { key:'insegura',     emoji:'😟', label:'Insegura',      valence:-1 },
-  { key:'frustrada',    emoji:'😤', label:'Frustrada',     valence:-1 },
-  { key:'decepcionada', emoji:'😞', label:'Decepcionada',  valence:-1 },
-  { key:'arrepentida',  emoji:'😔', label:'Arrepentida',   valence:-1 },
-  { key:'herida',       emoji:'💔', label:'Herida',        valence:-1 },
-  { key:'rechazada',    emoji:'🥺', label:'Rechazada',     valence:-1 },
+  // 🟢 Positivas (valence 1)
+  { key:'amada',           emoji:'🥰', label:'Amada',           valence: 1 },
+  { key:'entusiasmada',    emoji:'🤩', label:'Entusiasmada',    valence: 1 },
+  { key:'optimista',       emoji:'✨', label:'Optimista',        valence: 1 },
+  { key:'proactiva',       emoji:'💪', label:'Proactiva',        valence: 1 },
+  // 🟡 Neutras (valence 0)
+  { key:'sorprendida',     emoji:'😮', label:'Sorprendida',      valence: 0 },
+  { key:'indiferente',     emoji:'😐', label:'Indiferente',      valence: 0 },
+  { key:'pensativa',       emoji:'🤔', label:'Pensativa',        valence: 0 },
+  { key:'adolorida_feliz', emoji:'🤕', label:'Adolorida 💛',     valence: 0 },
+  // 🔵 Tristes (valence -1)
+  { key:'insegura',        emoji:'😟', label:'Insegura',         valence:-1 },
+  { key:'decepcionada',    emoji:'😞', label:'Decepcionada',     valence:-1 },
+  { key:'arrepentida',     emoji:'😔', label:'Arrepentida',      valence:-1 },
+  { key:'herida',          emoji:'💔', label:'Herida',           valence:-1 },
+  { key:'rechazada',       emoji:'🥺', label:'Rechazada',        valence:-1 },
+  // 🔴 Negativas (valence -2)
+  { key:'frustrada',       emoji:'😤', label:'Frustrada',        valence:-2 },
+  { key:'adolorida_mal',   emoji:'😣', label:'Adolorida y mal',  valence:-2 },
+  { key:'enferma',         emoji:'🤧', label:'Enferma',          valence:-2 },
 ];
 
 let state = {
@@ -3431,11 +3439,11 @@ function todayEmotionRecord() {
   return state.emotions.find(e => e.date === d) || null;
 }
 
-function saveEmotion(moment, key, customLabel) {
+function saveEmotion(moment, key, customLabel, customValence) {
   const d = today();
   const existing = state.emotions.find(e => e.date === d);
   const entry = key === 'custom'
-    ? { key: 'custom', label: customLabel || 'Otra', emoji: '💭', valence: 0 }
+    ? { key: 'custom', label: customLabel || 'Otra', emoji: '💭', valence: customValence !== undefined ? customValence : 0 }
     : getEmotionByKey(key);
   const record = { ...(existing || { date: d }), [moment]: { key: entry.key, label: entry.label, emoji: entry.emoji, valence: entry.valence } };
   if (existing) {
@@ -3480,8 +3488,23 @@ function renderEmotionGrid(moment) {
           <span class="emo-name">Otra...</span>
         </button>
       </div>
-      <div id="customEmoForm_${moment}" style="display:none;margin-top:10px">
-        <input type="text" id="customEmoInput_${moment}" class="form-input" placeholder="Escribe cómo te sientes..." maxlength="30" style="margin-bottom:8px">
+      <div id="customEmoForm_${moment}" style="display:none;margin-top:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:12px">
+        <input type="text" id="customEmoInput_${moment}" class="form-input" placeholder="Escribe cómo te sientes..." maxlength="30" style="margin-bottom:10px">
+        <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">¿En qué categoría va?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(106,180,140,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="1" style="accent-color:var(--green)"> 🟢 Positiva
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(201,169,110,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="0" checked style="accent-color:var(--gold)"> 🟡 Neutra
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(100,140,210,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="-1" style="accent-color:#6488d4"> 🔵 Triste
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(190,80,80,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="-2" style="accent-color:var(--roseDark)"> 🔴 Negativa
+          </label>
+        </div>
         <div style="display:flex;gap:8px">
           <button onclick="saveCustomEmotion('${moment}')" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--lilac),var(--rose));color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit">Guardar</button>
           <button onclick="hideCustomEmotion('${moment}')" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--textMid);font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
@@ -3512,7 +3535,10 @@ function hideCustomEmotion(moment) {
 function saveCustomEmotion(moment) {
   const val = document.getElementById(`customEmoInput_${moment}`).value.trim();
   if (!val) return;
-  saveEmotion(moment, 'custom', val);
+  const radios = document.querySelectorAll(`input[name="customValence_${moment}"]`);
+  let selectedValence = 0;
+  radios.forEach(r => { if (r.checked) selectedValence = parseInt(r.value); });
+  saveEmotion(moment, 'custom', val, selectedValence);
 }
 
 function renderEmotionHistory() {
@@ -3635,6 +3661,91 @@ function renderEmotionAnalysis() {
     </div>`;
 }
 
+
+let emoMonthIdx = 0; // 0 = mes más reciente
+
+function shiftEmoMonth(dir) {
+  const byMonth = {};
+  (state.emotions || []).forEach(rec => {
+    const mk = rec.date.slice(0,7);
+    if (!byMonth[mk]) byMonth[mk] = [];
+    byMonth[mk].push(rec);
+  });
+  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+  emoMonthIdx = Math.max(0, Math.min(months.length - 1, emoMonthIdx + dir));
+  const el = document.getElementById('emoMonthlySummary');
+  if (el) el.innerHTML = renderMonthlyEmotionSummary();
+}
+
+function renderMonthlyEmotionSummary() {
+  if (!state.emotions || state.emotions.length === 0)
+    return '<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px;font-style:italic">Aún no hay registros de ánimo suficientes.</div>';
+
+  // Agrupar por mes
+  const byMonth = {};
+  state.emotions.forEach(rec => {
+    const mk = rec.date.slice(0,7);
+    if (!byMonth[mk]) byMonth[mk] = [];
+    byMonth[mk].push(rec);
+  });
+
+  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+  if (months.length === 0) return '';
+
+  // Clamp index
+  emoMonthIdx = Math.max(0, Math.min(months.length - 1, emoMonthIdx));
+  const mk = months[emoMonthIdx];
+  const [y, m] = mk.split('-');
+  const monthLabel = MONTHS_ES[parseInt(m)-1] + ' ' + y;
+  const records = byMonth[mk];
+
+  // Nav arrows
+  const canPrev = emoMonthIdx < months.length - 1;
+  const canNext = emoMonthIdx > 0;
+  const navHtml = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button onclick="shiftEmoMonth(1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:${canPrev?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canPrev?'var(--text)':'var(--border)'};font-size:16px;cursor:${canPrev?'pointer':'default'};font-family:inherit" ${canPrev?'':'disabled'}>‹</button>
+      <div style="font-size:13px;font-weight:700;color:var(--lilacDark);letter-spacing:1px">🗓️ ${monthLabel}</div>
+      <button onclick="shiftEmoMonth(-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:${canNext?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canNext?'var(--text)':'var(--border)'};font-size:16px;cursor:${canNext?'pointer':'default'};font-family:inherit" ${canNext?'':'disabled'}>›</button>
+    </div>
+    <div style="text-align:center;font-size:10px;color:var(--textLight);margin-bottom:12px">${emoMonthIdx + 1} de ${months.length} ${months.length===1?'mes':'meses'}</div>`;
+
+  // Contar frecuencia
+  const freq = {};
+  records.forEach(rec => {
+    if (rec.morning) freq[rec.morning] = (freq[rec.morning] || 0) + 1;
+    if (rec.evening) freq[rec.evening] = (freq[rec.evening] || 0) + 1;
+  });
+
+  const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]);
+  if (sorted.length === 0)
+    return navHtml + '<div style="text-align:center;color:var(--textLight);font-size:12px;padding:12px">Sin registros este mes.</div>';
+
+  const maxCount = sorted[0][1];
+  const totalRegistros = records.length;
+
+  const rows = sorted.map(([key, count]) => {
+    const em = EMOTIONS.find(e => e.key === key) || { emoji:'✨', label: key, valence: 0 };
+    const pct = Math.round((count / maxCount) * 100);
+    const barColor = em.valence === 1 ? 'var(--green)' : em.valence === 0 ? 'var(--gold)' : em.valence === -1 ? '#6488d4' : 'var(--roseDark)';
+    return `
+      <div style="display:grid;grid-template-columns:120px 1fr 28px;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${em.emoji} ${em.label}</div>
+        <div style="height:8px;background:rgba(0,0,0,0.1);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.5s ease"></div>
+        </div>
+        <div style="font-size:11px;color:var(--textMid);text-align:right">${count}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:14px">
+      ${navHtml}
+      ${rows}
+      <div style="margin-top:10px;font-size:10px;color:var(--textLight);text-align:right">${totalRegistros} día${totalRegistros!==1?'s':''} registrados</div>
+    </div>`;
+}
+
 function renderEmociones() {
   const el = document.getElementById('emocionesContent');
   if (!el) return;
@@ -3644,6 +3755,8 @@ function renderEmociones() {
     ${renderEmotionGrid('evening')}
     <div class="emo-section-title">Últimos 14 días</div>
     ${renderEmotionHistory()}
+    <div class="emo-section-title">Resumen mensual de emociones</div>
+    <div id="emoMonthlySummary">${renderMonthlyEmotionSummary()}</div>
     <div class="emo-section-title">Análisis de patrones</div>
     ${renderEmotionAnalysis()}
   `;
