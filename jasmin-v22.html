@@ -1115,27 +1115,60 @@ const MOOD_EMOJI = ["😴","😕","😐","😊","🔥"];
 const PERIOD_LABELS = ["Sin dolor","Leve","Moderado","Fuerte","Intenso 🥵"];
 const MOBILE_TARGET = 10;
 
+// Categorías de emoción → y-position en gráfico (5=más positiva, 0=más negativa)
+const CAT_META = {
+  positive: { y:5, color:'#6ab88c', label:'🟢 Positiva'   },
+  neutral:  { y:4, color:'#c9a96e', label:'🟡 Neutra'     },
+  disgust:  { y:3, color:'#f97316', label:'🟠 Desagrado'  },
+  fear:     { y:2, color:'#a855f7', label:'🟣 Miedo'      },
+  sad:      { y:1, color:'#6488d4', label:'🔵 Triste'     },
+  negative: { y:0, color:'#b96480', label:'🔴 Negativa'   },
+};
+
+function getCat(emoEntry) {
+  if (!emoEntry) return 'neutral';
+  if (emoEntry.cat) return emoEntry.cat;
+  // retrocompat con valence anterior
+  if (emoEntry.valence ===  1) return 'positive';
+  if (emoEntry.valence ===  0) return 'neutral';
+  if (emoEntry.valence === -1) return 'sad';
+  if (emoEntry.valence === -2) return 'negative';
+  return 'neutral';
+}
+
 const EMOTIONS = [
-  // 🟢 Positivas (valence 1)
-  { key:'amada',           emoji:'🥰', label:'Amada',           valence: 1 },
-  { key:'entusiasmada',    emoji:'🤩', label:'Entusiasmada',    valence: 1 },
-  { key:'optimista',       emoji:'✨', label:'Optimista',        valence: 1 },
-  { key:'proactiva',       emoji:'💪', label:'Proactiva',        valence: 1 },
-  // 🟡 Neutras (valence 0)
-  { key:'sorprendida',     emoji:'😮', label:'Sorprendida',      valence: 0 },
-  { key:'indiferente',     emoji:'😐', label:'Indiferente',      valence: 0 },
-  { key:'pensativa',       emoji:'🤔', label:'Pensativa',        valence: 0 },
-  { key:'adolorida_feliz', emoji:'🤕', label:'Adolorida 💛',     valence: 0 },
-  // 🔵 Tristes (valence -1)
-  { key:'insegura',        emoji:'😟', label:'Insegura',         valence:-1 },
-  { key:'decepcionada',    emoji:'😞', label:'Decepcionada',     valence:-1 },
-  { key:'arrepentida',     emoji:'😔', label:'Arrepentida',      valence:-1 },
-  { key:'herida',          emoji:'💔', label:'Herida',           valence:-1 },
-  { key:'rechazada',       emoji:'🥺', label:'Rechazada',        valence:-1 },
-  // 🔴 Negativas (valence -2)
-  { key:'frustrada',       emoji:'😤', label:'Frustrada',        valence:-2 },
-  { key:'adolorida_mal',   emoji:'😣', label:'Adolorida y mal',  valence:-2 },
-  { key:'enferma',         emoji:'🤧', label:'Enferma',          valence:-2 },
+  // 🟢 Positivas
+  { key:'amada',           emoji:'🥰', label:'Amada',           cat:'positive' },
+  { key:'entusiasmada',    emoji:'🤩', label:'Entusiasmada',    cat:'positive' },
+  { key:'optimista',       emoji:'✨', label:'Optimista',        cat:'positive' },
+  { key:'proactiva',       emoji:'💪', label:'Proactiva',        cat:'positive' },
+  // 🟡 Neutras
+  { key:'sorprendida',     emoji:'😮', label:'Sorprendida',      cat:'neutral'  },
+  { key:'indiferente',     emoji:'😐', label:'Indiferente',      cat:'neutral'  },
+  { key:'pensativa',       emoji:'🤔', label:'Pensativa',        cat:'neutral'  },
+  { key:'adolorida_feliz', emoji:'🤕', label:'Adolorida 💛',     cat:'neutral'  },
+  // 🟠 Desagrado
+  { key:'fastidiada',      emoji:'😒', label:'Fastidiada',       cat:'disgust'  },
+  { key:'asqueada',        emoji:'🤢', label:'Asqueada',         cat:'disgust'  },
+  { key:'harta',           emoji:'😑', label:'Harta',            cat:'disgust'  },
+  { key:'incomoda',        emoji:'😬', label:'Incómoda',         cat:'disgust'  },
+  { key:'irritada',        emoji:'🙄', label:'Irritada',         cat:'disgust'  },
+  // 🟣 Miedo
+  { key:'ansiosa',         emoji:'😰', label:'Ansiosa',          cat:'fear'     },
+  { key:'asustada',        emoji:'😨', label:'Asustada',         cat:'fear'     },
+  { key:'abrumada',        emoji:'😖', label:'Abrumada',         cat:'fear'     },
+  { key:'nerviosa',        emoji:'🫣', label:'Nerviosa',         cat:'fear'     },
+  { key:'en_panico',       emoji:'😳', label:'En pánico',        cat:'fear'     },
+  { key:'insegura',        emoji:'😟', label:'Insegura',         cat:'fear'     },
+  // 🔵 Triste
+  { key:'decepcionada',    emoji:'😞', label:'Decepcionada',     cat:'sad'      },
+  { key:'arrepentida',     emoji:'😔', label:'Arrepentida',      cat:'sad'      },
+  { key:'herida',          emoji:'💔', label:'Herida',           cat:'sad'      },
+  { key:'rechazada',       emoji:'🥺', label:'Rechazada',        cat:'sad'      },
+  // 🔴 Negativa
+  { key:'frustrada',       emoji:'😤', label:'Frustrada',        cat:'negative' },
+  { key:'adolorida_mal',   emoji:'😣', label:'Adolorida y mal',  cat:'negative' },
+  { key:'enferma',         emoji:'🤧', label:'Enferma',          cat:'negative' },
 ];
 
 let state = {
@@ -3442,10 +3475,13 @@ function todayEmotionRecord() {
 function saveEmotion(moment, key, customLabel, customValence) {
   const d = today();
   const existing = state.emotions.find(e => e.date === d);
-  const entry = key === 'custom'
-    ? { key: 'custom', label: customLabel || 'Otra', emoji: '💭', valence: customValence !== undefined ? customValence : 0 }
-    : getEmotionByKey(key);
-  const record = { ...(existing || { date: d }), [moment]: { key: entry.key, label: entry.label, emoji: entry.emoji, valence: entry.valence } };
+  let entry;
+  if (key === 'custom') {
+    entry = { key:'custom', label: customLabel||'Otra', emoji:'💭', cat: customValence||'neutral' };
+  } else {
+    entry = getEmotionByKey(key);
+  }
+  const record = { ...(existing || { date: d }), [moment]: { key: entry.key, label: entry.label, emoji: entry.emoji, cat: getCat(entry) } };
   if (existing) {
     state.emotions = state.emotions.map(e => e.date === d ? record : e);
   } else {
@@ -3493,16 +3529,22 @@ function renderEmotionGrid(moment) {
         <div style="font-size:10px;color:var(--textLight);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">¿En qué categoría va?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
           <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(106,180,140,0.35);cursor:pointer;font-size:12px;color:var(--text)">
-            <input type="radio" name="customValence_${moment}" value="1" style="accent-color:var(--green)"> 🟢 Positiva
+            <input type="radio" name="customValence_${moment}" value="positive" style="accent-color:#6ab88c"> 🟢 Positiva
           </label>
           <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(201,169,110,0.35);cursor:pointer;font-size:12px;color:var(--text)">
-            <input type="radio" name="customValence_${moment}" value="0" checked style="accent-color:var(--gold)"> 🟡 Neutra
+            <input type="radio" name="customValence_${moment}" value="neutral" checked style="accent-color:var(--gold)"> 🟡 Neutra
           </label>
-          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(100,140,210,0.35);cursor:pointer;font-size:12px;color:var(--text)">
-            <input type="radio" name="customValence_${moment}" value="-1" style="accent-color:#6488d4"> 🔵 Triste
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(249,115,22,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="disgust" style="accent-color:#f97316"> 🟠 Desagrado
           </label>
-          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(190,80,80,0.35);cursor:pointer;font-size:12px;color:var(--text)">
-            <input type="radio" name="customValence_${moment}" value="-2" style="accent-color:var(--roseDark)"> 🔴 Negativa
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(168,85,247,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="fear" style="accent-color:#a855f7"> 🟣 Miedo
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(100,136,212,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="sad" style="accent-color:#6488d4"> 🔵 Triste
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:1px solid rgba(185,100,128,0.35);cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="radio" name="customValence_${moment}" value="negative" style="accent-color:#b96480"> 🔴 Negativa
           </label>
         </div>
         <div style="display:flex;gap:8px">
@@ -3536,9 +3578,9 @@ function saveCustomEmotion(moment) {
   const val = document.getElementById(`customEmoInput_${moment}`).value.trim();
   if (!val) return;
   const radios = document.querySelectorAll(`input[name="customValence_${moment}"]`);
-  let selectedValence = 0;
-  radios.forEach(r => { if (r.checked) selectedValence = parseInt(r.value); });
-  saveEmotion(moment, 'custom', val, selectedValence);
+  let selectedCat = 'neutral';
+  radios.forEach(r => { if (r.checked) selectedCat = r.value; });
+  saveEmotion(moment, 'custom', val, selectedCat);
 }
 
 function renderEmotionHistory() {
@@ -3553,8 +3595,10 @@ function renderEmotionHistory() {
         const dateShort = r.date.slice(8) + '/' + r.date.slice(5,7);
         let arrow = '', arrowColor = 'var(--textLight)';
         if (m && ev) {
-          if (ev.valence > m.valence) { arrow = '↑'; arrowColor = 'var(--green)'; }
-          else if (ev.valence < m.valence) { arrow = '↓'; arrowColor = 'var(--roseDark)'; }
+          const _co = ['negative','sad','fear','disgust','neutral','positive'];
+          const _mi = _co.indexOf(getCat(m)), _ei = _co.indexOf(getCat(ev));
+          if (_ei > _mi) { arrow = '↑'; arrowColor = 'var(--green)'; }
+          else if (_ei < _mi) { arrow = '↓'; arrowColor = 'var(--roseDark)'; }
           else { arrow = '→'; arrowColor = 'var(--lilacDark)'; }
         }
         return `
@@ -3580,11 +3624,13 @@ function renderEmotionAnalysis() {
   if (pairs.length < 3) return `<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px;font-style:italic">Necesitas al menos 3 días con ambos registros para ver el análisis.</div>`;
 
   // Tendencia general
+  const catOrder = ['negative','sad','fear','disgust','neutral','positive'];
   let mejoraron = 0, igual = 0, empeoraron = 0;
   pairs.forEach(p => {
-    const diff = p.evening.valence - p.morning.valence;
-    if (diff > 0) mejoraron++;
-    else if (diff < 0) empeoraron++;
+    const mi = catOrder.indexOf(getCat(p.morning));
+    const ei = catOrder.indexOf(getCat(p.evening));
+    if (ei > mi) mejoraron++;
+    else if (ei < mi) empeoraron++;
     else igual++;
   });
   const total = pairs.length;
@@ -3597,10 +3643,12 @@ function renderEmotionAnalysis() {
   pairs.forEach(p => {
     const mk = p.morning.label;
     if (!byMorning[mk]) byMorning[mk] = { emoji: p.morning.emoji, total:0, better:0, same:0, worse:0 };
-    const diff = p.evening.valence - p.morning.valence;
+    const catOrder2 = ['negative','sad','fear','disgust','neutral','positive'];
+    const mi2 = catOrder2.indexOf(getCat(p.morning));
+    const ei2 = catOrder2.indexOf(getCat(p.evening));
     byMorning[mk].total++;
-    if (diff > 0) byMorning[mk].better++;
-    else if (diff < 0) byMorning[mk].worse++;
+    if (ei2 > mi2) byMorning[mk].better++;
+    else if (ei2 < mi2) byMorning[mk].worse++;
     else byMorning[mk].same++;
   });
   const morningRows = Object.entries(byMorning)
@@ -3673,8 +3721,8 @@ function shiftEmoMonth(dir) {
   });
   const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
   emoMonthIdx = Math.max(0, Math.min(months.length - 1, emoMonthIdx + dir));
-  const el = document.getElementById('emoMonthlySummary');
-  if (el) el.innerHTML = renderMonthlyEmotionSummary();
+  const el = document.getElementById('emoLineChart');
+  if (el) el.innerHTML = renderEmoLineChart();
 }
 
 function renderMonthlyEmotionSummary() {
@@ -3746,6 +3794,155 @@ function renderMonthlyEmotionSummary() {
     </div>`;
 }
 
+
+function renderEmoLineChart() {
+  if (!state.emotions || state.emotions.length === 0)
+    return '<div style="text-align:center;padding:24px;color:var(--textLight);font-size:13px;font-style:italic">Aún no hay registros de ánimo.</div>';
+
+  // Build month list
+  const byMonth = {};
+  state.emotions.forEach(rec => {
+    const mk = rec.date.slice(0,7);
+    if (!byMonth[mk]) byMonth[mk] = [];
+    byMonth[mk].push(rec);
+  });
+  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+  emoMonthIdx = Math.max(0, Math.min(months.length - 1, emoMonthIdx));
+  const mk = months[emoMonthIdx];
+  const [y, mo] = mk.split('-');
+  const monthLabel = MONTHS_ES[parseInt(mo)-1] + ' ' + y;
+  const daysInMonth = new Date(parseInt(y), parseInt(mo), 0).getDate();
+
+  // Map cat → y position (0–5)
+  const catY = { positive:5, neutral:4, disgust:3, fear:2, sad:1, negative:0 };
+  const catColor = { positive:'#6ab88c', neutral:'#c9a96e', disgust:'#f97316', fear:'#a855f7', sad:'#6488d4', negative:'#b96480' };
+  const catLabel = { positive:'🟢 Positiva', neutral:'🟡 Neutra', disgust:'🟠 Desagrado', fear:'🟣 Miedo', sad:'🔵 Triste', negative:'🔴 Negativa' };
+
+  // Build day data for this month
+  const records = byMonth[mk];
+  const dayMap = {};
+  records.forEach(r => { dayMap[r.date] = r; });
+
+  // Nav
+  const canPrev = emoMonthIdx < months.length - 1;
+  const canNext = emoMonthIdx > 0;
+
+  // SVG dimensions
+  const W = 340, H = 180, padL = 30, padR = 12, padT = 16, padB = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const colW = chartW / daysInMonth;
+
+  // Grid lines (6 levels)
+  let gridLines = '';
+  for (let lv = 0; lv <= 5; lv++) {
+    const yp = padT + chartH - (lv / 5) * chartH;
+    const cats = Object.entries(catY).filter(([,v]) => v === lv);
+    const col = cats.length ? catColor[cats[0][0]] : '#888';
+    gridLines += `<line x1="${padL}" y1="${yp}" x2="${W - padR}" y2="${yp}" stroke="${col}" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.4"/>`;
+    // Left label — cat icon
+    const icon = cats.length ? catLabel[cats[0][0]].slice(0,2) : '';
+    gridLines += `<text x="${padL - 4}" y="${yp + 4}" text-anchor="end" font-size="9" fill="${col}" opacity="0.9">${icon}</text>`;
+  }
+
+  // Day ticks + weekend shading
+  let dayTicks = '', weekendBands = '';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const x = padL + (d - 0.5) * colW;
+    const dateStr = `${y}-${mo}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(dateStr + 'T12:00:00').getDay();
+    if (dow === 0 || dow === 6) {
+      weekendBands += `<rect x="${padL + (d-1)*colW}" y="${padT}" width="${colW}" height="${chartH}" fill="rgba(255,255,255,0.03)"/>`;
+    }
+    if (d % 5 === 1 || d === 1) {
+      dayTicks += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.35)">${d}</text>`;
+    }
+  }
+
+  // Build morning & evening point arrays
+  const morningPts = [], eveningPts = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${y}-${mo}-${String(d).padStart(2,'0')}`;
+    const rec = dayMap[dateStr];
+    const x = padL + (d - 0.5) * colW;
+    if (rec?.morning) {
+      const cat = getCat(rec.morning);
+      const yv = padT + chartH - (catY[cat] / 5) * chartH;
+      morningPts.push({ x, y: yv, rec: rec.morning, cat, d });
+    }
+    if (rec?.evening) {
+      const cat = getCat(rec.evening);
+      const yv = padT + chartH - (catY[cat] / 5) * chartH;
+      eveningPts.push({ x, y: yv, rec: rec.evening, cat, d });
+    }
+  }
+
+  function makePolyline(pts, color, dash='') {
+    if (pts.length < 2) return '';
+    const d = pts.map((p,i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.7" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
+  }
+
+  function makeDots(pts) {
+    return pts.map(p => {
+      const col = catColor[p.cat];
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${col}" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>`;
+    }).join('');
+  }
+
+  // Emoji labels for dots (only when few points)
+  function makeEmojis(pts) {
+    if (pts.length > 15) return '';
+    return pts.map(p => `<text x="${p.x.toFixed(1)}" y="${(p.y - 6).toFixed(1)}" text-anchor="middle" font-size="10">${p.rec.emoji}</text>`).join('');
+  }
+
+  const svgContent = `
+    ${weekendBands}
+    ${gridLines}
+    ${dayTicks}
+    ${makePolyline(morningPts, '#f4c48c')}
+    ${makePolyline(eveningPts, '#c9a0dc', '4,2')}
+    ${makeDots(morningPts)}
+    ${makeDots(eveningPts)}
+    ${makeEmojis(morningPts)}
+    ${makeEmojis(eveningPts)}
+  `;
+
+  // Legend
+  const legend = `
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--textMid)">
+        <div style="width:18px;height:2px;background:#f4c48c;border-radius:2px"></div> ☀️ Mañana
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--textMid)">
+        <div style="width:18px;height:2px;background:#c9a0dc;border-radius:2px;border-top:1px dashed #c9a0dc"></div> 🌙 Noche
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+      ${Object.entries(catLabel).map(([k,l]) => `<span style="font-size:9px;color:${catColor[k]}">${l}</span>`).join('')}
+    </div>`;
+
+  const totalDias = records.filter(r => r.morning || r.evening).length;
+
+  return `
+    <div style="background:rgba(20,15,30,0.6);border:1px solid var(--border);border-radius:16px;padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button onclick="shiftEmoMonth(1)" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:${canPrev?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canPrev?'var(--text)':'var(--border)'};font-size:15px;cursor:${canPrev?'pointer':'default'};font-family:inherit" ${canPrev?'':'disabled'}>‹</button>
+        <div style="text-align:center">
+          <div style="font-size:13px;font-weight:700;color:var(--lilacDark);letter-spacing:1px">🗓️ ${monthLabel}</div>
+          <div style="font-size:10px;color:var(--textLight);margin-top:2px">${totalDias} día${totalDias!==1?'s':''} · ${emoMonthIdx+1}/${months.length}</div>
+        </div>
+        <button onclick="shiftEmoMonth(-1)" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:${canNext?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canNext?'var(--text)':'var(--border)'};font-size:15px;cursor:${canNext?'pointer':'default'};font-family:inherit" ${canNext?'':'disabled'}>›</button>
+      </div>
+      <div style="overflow-x:auto">
+        <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin:0 auto;overflow:visible">
+          ${svgContent}
+        </svg>
+      </div>
+      ${legend}
+    </div>`;
+}
+
 function renderEmociones() {
   const el = document.getElementById('emocionesContent');
   if (!el) return;
@@ -3753,10 +3950,8 @@ function renderEmociones() {
     <div style="font-size:10px;letter-spacing:3px;color:var(--lilacDark);text-transform:uppercase;margin-bottom:20px">Ánimo del día 🌸</div>
     ${renderEmotionGrid('morning')}
     ${renderEmotionGrid('evening')}
-    <div class="emo-section-title">Últimos 14 días</div>
-    ${renderEmotionHistory()}
-    <div class="emo-section-title">Resumen mensual de emociones</div>
-    <div id="emoMonthlySummary">${renderMonthlyEmotionSummary()}</div>
+    <div class="emo-section-title">Registro mensual</div>
+    <div id="emoLineChart">${renderEmoLineChart()}</div>
     <div class="emo-section-title">Análisis de patrones</div>
     ${renderEmotionAnalysis()}
   `;
