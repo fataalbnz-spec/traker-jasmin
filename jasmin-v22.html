@@ -993,6 +993,7 @@
       <label class="form-label">Fecha</label>
       <input type="date" class="form-input" id="regDate" onchange="onDateChange()">
     </div>
+    <div id="existingDayNotice" style="display:none;margin-bottom:12px;padding:10px 12px;background:rgba(185,100,128,0.08);border:1px solid rgba(185,100,128,0.25);border-radius:10px;font-size:12px;color:var(--text);line-height:1.6"></div>
 
     <div class="form-grid-2" style="margin-bottom:14px">
       <div>
@@ -1172,6 +1173,7 @@ let activePlatform = 'all';
 let userClosedMonth = false;
 let confirmDeleteState = {};
 let pendingExtraIncomes = [];  // extras pendientes en el formulario de registro
+let editingDayId = null;       // si != null, saveBlock reemplaza en vez de acumular
 let selectedExtraTag = '';     // tag seleccionado en el formulario de extras
 
 // ============================================================
@@ -2328,25 +2330,28 @@ function onDateChange() {
   renderPendingExtraIncomes();
 
   if (existing) {
-    const totalH = existing.totalHours || 0;
-    const hh = Math.floor(totalH);
-    const mm = Math.round((totalH - hh) * 60);
-    document.getElementById('hoursWorkedH').value = hh || '';
-    document.getElementById('hoursWorkedM').value = mm || '';
-    // Per-platform earnings
-    const jEarn = existing.jasminEarnings !== undefined ? existing.jasminEarnings : existing.totalEarnings;
-    const sEarn = existing.stripchatEarnings || 0;
-    document.getElementById('jasminEarningsInput').value = jEarn > 0 ? jEarn : '';
-    document.getElementById('stripchatEarningsInput').value = sEarn > 0 ? sEarn : '';
-    document.getElementById('dayEarningsTotal').value = (jEarn + sEarn).toFixed(2);
-    state.period = existing.period || false;
+    // Modo agregar bloque: form vacío + aviso de acumulación
+    editingDayId = null;
+    document.getElementById('hoursWorkedH').value = '';
+    document.getElementById('hoursWorkedM').value = '';
+    document.getElementById('jasminEarningsInput').value = '';
+    document.getElementById('stripchatEarningsInput').value = '';
+    document.getElementById('dayEarningsTotal').value = '';
+    state.period = false;
     refreshPeriodBtn();
-    if (state.period) {
-      document.getElementById('periodRange').value = existing.periodIntensity || 0;
-      updatePeriodLabel();
+    document.getElementById('dayNotes').value = '';
+    const existingNotice = document.getElementById('existingDayNotice');
+    if (existingNotice) {
+      existingNotice.style.display = 'block';
+      const jE = existing.jasminEarnings !== undefined ? existing.jasminEarnings : existing.totalEarnings;
+      existingNotice.innerHTML = '📌 Ya registraste este día: <strong>' + fmtH(existing.totalHours) + '</strong> · <strong>' + fmt(existing.totalEarnings) + '</strong><br>'
+        + '<span style="font-size:10px;color:var(--textLight)">Los nuevos datos se sumarán al guardar · '
+        + '<button onclick="editExistingDay(' + existing.id + ')" style="background:none;border:none;color:var(--lilacDark);font-size:10px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">✏️ editar en cambio</button></span>';
     }
-    document.getElementById('dayNotes').value = existing.notes || '';
   } else {
+    editingDayId = null;
+    const existingNotice = document.getElementById('existingDayNotice');
+    if (existingNotice) existingNotice.style.display = 'none';
     document.getElementById('hoursWorkedH').value = '';
     document.getElementById('hoursWorkedM').value = '';
     document.getElementById('jasminEarningsInput').value = '';
@@ -2356,6 +2361,58 @@ function onDateChange() {
     refreshPeriodBtn();
     document.getElementById('dayNotes').value = '';
   }
+}
+
+function editExistingDay(id) {
+  const day = state.days.find(d => d.id === id);
+  if (!day) return;
+  editingDayId = id;
+  // Pre-llenar form con datos existentes para reemplazar
+  document.getElementById('regDate').value = day.date;
+  const hh = Math.floor(day.totalHours || 0);
+  const mm = Math.round(((day.totalHours || 0) - hh) * 60);
+  document.getElementById('hoursWorkedH').value = hh || '';
+  document.getElementById('hoursWorkedM').value = mm || '';
+  const jEarn = day.jasminEarnings !== undefined ? day.jasminEarnings : day.totalEarnings;
+  const sEarn = day.stripchatEarnings || 0;
+  document.getElementById('jasminEarningsInput').value = jEarn > 0 ? jEarn : '';
+  document.getElementById('stripchatEarningsInput').value = sEarn > 0 ? sEarn : '';
+  document.getElementById('dayEarningsTotal').value = (jEarn + sEarn).toFixed(2);
+  document.getElementById('dayNotes').value = day.notes || '';
+  state.period = day.period || false;
+  refreshPeriodBtn();
+  if (state.period) { document.getElementById('periodRange').value = day.periodIntensity || 0; updatePeriodLabel(); }
+  pendingExtraIncomes = [];
+  renderPendingExtraIncomes();
+  const notice = document.getElementById('existingDayNotice');
+  if (notice) {
+    notice.style.display = 'block';
+    notice.innerHTML = '✏️ <strong>Modo edición</strong> — al guardar se reemplazarán los datos de este día · '
+      + '<button onclick="cancelEdit()" style="background:none;border:none;color:var(--roseDark);font-size:10px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">cancelar</button>';
+  }
+  const saveBtn = document.getElementById('saveBlockBtn');
+  if (saveBtn) saveBtn.textContent = 'Actualizar día';
+  switchTab('add');
+  window.scrollTo(0, 0);
+}
+
+function cancelEdit() {
+  editingDayId = null;
+  document.getElementById('regDate').value = '';
+  document.getElementById('hoursWorkedH').value = '';
+  document.getElementById('hoursWorkedM').value = '';
+  document.getElementById('jasminEarningsInput').value = '';
+  document.getElementById('stripchatEarningsInput').value = '';
+  document.getElementById('dayEarningsTotal').value = '';
+  document.getElementById('dayNotes').value = '';
+  state.period = false;
+  refreshPeriodBtn();
+  pendingExtraIncomes = [];
+  renderPendingExtraIncomes();
+  const notice = document.getElementById('existingDayNotice');
+  if (notice) notice.style.display = 'none';
+  const saveBtn = document.getElementById('saveBlockBtn');
+  if (saveBtn) saveBtn.textContent = 'Guardar día';
 }
 
 function togglePeriod() {
@@ -2484,24 +2541,46 @@ function saveBlock() {
 
   if (existingIdx >= 0) {
     const existing = state.days[existingIdx];
-    // Calcular base de streaming sin extras previos
     const prevExtras = existing.extraIncomes || [];
-    const prevExtraTotal = prevExtras.reduce((a, e) => a + e.amount, 0);
-    // Combinar extras anteriores + nuevos del formulario
     const allExtras = [...prevExtras, ...extras];
     const allExtraTotal = allExtras.reduce((a, e) => a + e.amount, 0);
-    const finalTotal = +(jasminEarnings + stripchatEarnings + allExtraTotal).toFixed(2);
 
-    state.days[existingIdx] = {
-      ...existing,
-      period, periodIntensity, notes,
-      totalHours: hoursWorked,
-      jasminEarnings,
-      stripchatEarnings,
-      totalEarnings: finalTotal,
-      extraIncomes: allExtras,
-      blocks: [{ id: Date.now(), durationHours: hoursWorked, fromMobile: false }],
-    };
+    if (editingDayId === existing.id) {
+      // Modo editar: reemplazar totalmente
+      const finalTotal = +(jasminEarnings + stripchatEarnings + allExtraTotal).toFixed(2);
+      state.days[existingIdx] = {
+        ...existing,
+        period, periodIntensity, notes,
+        totalHours: hoursWorked,
+        jasminEarnings,
+        stripchatEarnings,
+        totalEarnings: finalTotal,
+        extraIncomes: allExtras,
+        blocks: [{ id: Date.now(), durationHours: hoursWorked, fromMobile: false }],
+      };
+    } else {
+      // Modo agregar bloque: acumular horas y ganancias
+      const newTotalHours  = +((existing.totalHours || 0) + hoursWorked).toFixed(4);
+      const newJasmin      = +((existing.jasminEarnings !== undefined ? existing.jasminEarnings : existing.totalEarnings) + jasminEarnings).toFixed(2);
+      const newStripchat   = +((existing.stripchatEarnings || 0) + stripchatEarnings).toFixed(2);
+      const finalTotal     = +(newJasmin + newStripchat + allExtraTotal).toFixed(2);
+      const newBlocks      = [...(existing.blocks || []), { id: Date.now(), durationHours: hoursWorked, fromMobile: false }];
+      const newNotes       = notes
+        ? (existing.notes ? existing.notes + ' · ' + notes : notes)
+        : (existing.notes || '');
+      state.days[existingIdx] = {
+        ...existing,
+        period, periodIntensity,
+        notes: newNotes,
+        totalHours: newTotalHours,
+        jasminEarnings: newJasmin,
+        stripchatEarnings: newStripchat,
+        totalEarnings: finalTotal,
+        extraIncomes: allExtras,
+        blocks: newBlocks,
+      };
+    }
+    editingDayId = null;
   } else {
     const newDay = {
       id: Date.now() + 1,
@@ -2525,27 +2604,27 @@ function saveBlock() {
   saveData();
   renderAll();
 
-  // Reset form
-  document.getElementById('hoursWorkedH').value = '';
-  document.getElementById('hoursWorkedM').value = '';
-  document.getElementById('jasminEarningsInput').value = '';
-  document.getElementById('stripchatEarningsInput').value = '';
-  document.getElementById('dayEarningsTotal').value = '';
-  document.getElementById('dayNotes').value = '';
+  // Reset form — volver a estado limpio para nuevo registro
+  editingDayId = null;
+  const _notice = document.getElementById('existingDayNotice');
+  if (_notice) _notice.style.display = 'none';
+  document.getElementById("regDate").value = "";
+  document.getElementById("hoursWorkedH").value = "";
+  document.getElementById("hoursWorkedM").value = "";
+  document.getElementById("jasminEarningsInput").value = "";
+  document.getElementById("stripchatEarningsInput").value = "";
+  document.getElementById("dayEarningsTotal").value = "";
+  document.getElementById("dayNotes").value = "";
   state.period = false;
   refreshPeriodBtn();
-  // Limpiar extras pendientes
   pendingExtraIncomes = [];
   renderPendingExtraIncomes();
-
-  const btn = document.getElementById('saveBlockBtn');
-  btn.textContent = '✓ Día guardado';
-  btn.className = 'btn-primary saved';
-  setTimeout(()=>{
-    btn.textContent = 'Guardar día';
-    btn.className='btn-primary';
-  },1500);
-  onDateChange();
+  const addTitle2 = document.getElementById("addTabTitle");
+  if (addTitle2) addTitle2.textContent = "Nuevo día";
+  const btn = document.getElementById("saveBlockBtn");
+  btn.textContent = "✓ Día guardado";
+  btn.className = "btn-primary saved";
+  setTimeout(()=>{ btn.textContent = "Guardar día"; btn.className="btn-primary"; },1500);
 }
 
 // ============================================================
@@ -2647,7 +2726,10 @@ function renderSessions() {
               <div style="text-align:right;font-size:11px;color:var(--textLight);margin-top:6px">Total extras: ${fmt(day.extraIncomes.reduce((a,e)=>a+e.amount,0))}</div>
             </div>
           ` : ''}
-          <div class="delete-day">${confirmDeleteBtn(`deleteDay(${day.id})`,`✕ eliminar día`,'',true)}</div>
+          <div class="delete-day" style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+            <button onclick="editExistingDay(${day.id})" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--lilacDark);font-size:11px;cursor:pointer;font-family:inherit">✏️ editar</button>
+            ${confirmDeleteBtn(`deleteDay(${day.id})`,`✕ eliminar día`,'',true)}
+          </div>
         </div>
       `;
     }).join('') : '';
