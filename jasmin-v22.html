@@ -2432,7 +2432,7 @@ function editExistingDay(id) {
       + '<button onclick="cancelEdit()" style="background:none;border:none;color:var(--roseDark);font-size:10px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">cancelar</button>';
   }
   const saveBtn = document.getElementById('saveBlockBtn');
-  if (saveBtn) saveBtn.textContent = 'Actualizar día';
+  if (saveBtn) { saveBtn.textContent = '✏️ Actualizar día'; saveBtn.style.background = 'linear-gradient(135deg,#7c6fa0,#a07080)'; }
   switchTab('add');
   window.scrollTo(0, 0);
 }
@@ -2597,12 +2597,24 @@ function saveBlock() {
         blocks: [{ id: Date.now(), durationHours: hoursWorked, fromMobile: false }],
       };
     } else {
-      // Modo agregar bloque: acumular horas y ganancias
+      // Modo agregar bloque: suma simple — nuevo sobre lo que ya existe
+      const prevJasmin     = +(existing.jasminEarnings    ?? 0);
+      const prevStripchat  = +(existing.stripchatEarnings ?? 0);
+      const prevExtrasSum  = (existing.extraIncomes || []).reduce((a,e) => a + e.amount, 0);
+      // Si el día anterior no tenía desglose por plataforma, reconstruir desde total
+      const prevTotal      = +(existing.totalEarnings || 0);
+      const prevStreaming   = prevJasmin + prevStripchat;
+      const adjustedPrevJasmin = prevStreaming === 0 && prevTotal > 0
+        ? prevTotal - prevExtrasSum   // sin desglose: todo a jasmin
+        : prevJasmin;
+
       const newTotalHours  = +((existing.totalHours || 0) + hoursWorked).toFixed(4);
-      const newJasmin      = +((existing.jasminEarnings !== undefined ? existing.jasminEarnings : existing.totalEarnings) + jasminEarnings).toFixed(2);
-      const newStripchat   = +((existing.stripchatEarnings || 0) + stripchatEarnings).toFixed(2);
-      const finalTotal     = +(newJasmin + newStripchat + allExtraTotal).toFixed(2);
-      const newBlocks      = [...(existing.blocks || []), { id: Date.now(), durationHours: hoursWorked, fromMobile: false }];
+      const newJasmin      = +(adjustedPrevJasmin  + jasminEarnings).toFixed(2);
+      const newStripchat   = +(prevStripchat + stripchatEarnings).toFixed(2);
+      const newExtras      = [...(existing.extraIncomes || []), ...extras];
+      const newExtraTotal  = newExtras.reduce((a,e) => a + e.amount, 0);
+      const finalTotal     = +(newJasmin + newStripchat + newExtraTotal).toFixed(2);
+      const newBlocks      = [...(existing.blocks || [{ id: existing.id, durationHours: existing.totalHours }]), { id: Date.now(), durationHours: hoursWorked, fromMobile: false }];
       const newNotes       = notes
         ? (existing.notes ? existing.notes + ' · ' + notes : notes)
         : (existing.notes || '');
@@ -2614,7 +2626,7 @@ function saveBlock() {
         jasminEarnings: newJasmin,
         stripchatEarnings: newStripchat,
         totalEarnings: finalTotal,
-        extraIncomes: allExtras,
+        extraIncomes: newExtras,
         blocks: newBlocks,
       };
     }
@@ -2670,7 +2682,8 @@ function saveBlock() {
     if (addTitle2) addTitle2.textContent = 'Agregar bloque';
     btn.textContent = "✓ Bloque guardado";
     btn.className = "btn-primary saved";
-    setTimeout(()=>{ btn.textContent = "➕ Agregar bloque"; btn.className="btn-primary"; }, 1500);
+    btn.style.background = '';
+    setTimeout(()=>{ btn.textContent = "➕ Agregar bloque"; btn.className="btn-primary"; btn.style.background=''; }, 1500);
   } else {
     if (_notice) _notice.style.display = 'none';
     if (addTitle2) addTitle2.textContent = 'Nuevo día';
