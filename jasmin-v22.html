@@ -346,7 +346,6 @@
   .duration-hint { font-size: 12px; color: var(--green); margin-bottom: 14px; }
 
 
-
   /* Years selector */
   .years-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .year-btn { padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--textLight); font-size: 11px; cursor: pointer; font-family: inherit; }
@@ -770,7 +769,6 @@
   </div>
 
 
-
   <div class="stat-section-label">Ganancias 💰</div>
   <!-- Platform filter -->
   <div class="platform-filter" id="platformFilter">
@@ -1113,18 +1111,8 @@ const DAYS_ES = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MOOD_EMOJI = ["😴","😕","😐","😊","🔥"];
 const PERIOD_LABELS = ["Sin dolor","Leve","Moderado","Fuerte","Intenso 🥵"];
-const MOBILE_TARGET = 10;
 
 // Categorías de emoción → y-position en gráfico (5=más positiva, 0=más negativa)
-const CAT_META = {
-  positive: { y:5, color:'#6ab88c', label:'🟢 Positiva'   },
-  neutral:  { y:4, color:'#c9a96e', label:'🟡 Neutra'     },
-  disgust:  { y:3, color:'#f97316', label:'🟠 Desagrado'  },
-  fear:     { y:2, color:'#a855f7', label:'🟣 Miedo'      },
-  sad:      { y:1, color:'#6488d4', label:'🔵 Triste'     },
-  negative: { y:0, color:'#b96480', label:'🔴 Negativa'   },
-};
-
 function getCat(emoEntry) {
   if (!emoEntry) return 'neutral';
   if (emoEntry.cat) return emoEntry.cat;
@@ -1205,14 +1193,13 @@ let state = {
   restDays: [],           // [0=dom,1=lun,...,6=sab]
 };
 
-let weekChart = null, monthChart = null, dayChart = null, domChart = null, periodChart = null;
+let dayChart = null, periodChart = null;
 let histViewPeriod = 'week';
 let histViewOffset = 0;
 let periodMetric   = 'both';
 let expandedMonth = null;
 let activePlatform = 'all';
 let userClosedMonth = false;
-let confirmDeleteState = {};
 let pendingExtraIncomes = [];  // extras pendientes en el formulario de registro
 let editingDayId = null;       // si != null, saveBlock reemplaza en vez de acumular
 let selectedExtraTag = '';     // tag seleccionado en el formulario de extras
@@ -1232,12 +1219,6 @@ function fmtTime(h, m) {
 function parseTimeVal(val) {
   const [h, m] = val.split(":").map(Number);
   return { h, m: m || 0 };
-}
-
-// Convierte "9:5" o "9:30" al formato "HH:MM" que necesita input[type=time]
-function toTimeInput(val) {
-  const {h, m} = parseTimeVal(val);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 
 function dur(startVal, endVal) {
@@ -1748,17 +1729,6 @@ function getWorkingDaysLeft(end, start) {
   return count;
 }
 
-function toggleRestDay(dow) {
-  const rd = state.restDays || [];
-  const idx = rd.indexOf(dow);
-  if (idx === -1) rd.push(dow);
-  else rd.splice(idx, 1);
-  state.restDays = rd;
-  saveData();
-  renderRestDayBtns();
-  renderHeader();
-}
-
 function renderRestDayBtns() {
   const rd = state.restDays || [];
   document.querySelectorAll('.rest-day-btn').forEach(btn => {
@@ -2155,7 +2125,6 @@ function renderPeriodNav() {
 }
 
 
-
 function renderHistorico() {
   // Sync filter buttons to current activePlatform
   ['all','jasmin','stripchat'].forEach(k => {
@@ -2170,65 +2139,6 @@ function renderHistorico() {
 
   renderPeriodNav();
   renderAnnualSummary();
-}
-
-function renderWeekChart() {
-  const sorted = [...state.weeklyHistory].sort((a,b)=>a.weekKey.localeCompare(b.weekKey));
-  const last12 = sorted.slice(-12);
-  document.getElementById('weekChartSub').textContent = `Últimas ${last12.length} semanas · inicio lunes`;
-
-  const labels = last12.map(w => {
-    const d = new Date(w.weekKey + 'T12:00:00');
-    return `${d.getDate()}/${d.getMonth()+1}`;
-  });
-  const m = state.weekMetric;
-
-  const datasets = [];
-  if (m==='earnings'||m==='both') datasets.push({ label:'Ingresos', data:last12.map(w=>+w.earnings.toFixed(2)), backgroundColor:'rgba(195,180,212,0.8)', borderRadius:5, yAxisID:'y' });
-  if (m==='hours'||m==='both') datasets.push({ label:'Horas', data:last12.map(w=>+w.hours.toFixed(1)), backgroundColor:'rgba(212,165,176,0.7)', borderRadius:5, yAxisID:m==='both'?'y2':'y' });
-
-  const _wcl=document.getElementById('weekChartLegend'); if(_wcl) _wcl.style.display=m==='both'?'flex':'none';
-
-  const scales = { x:{grid:{display:false},ticks:{color:'#b8a898',font:{size:9}}}, y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#b8a898',font:{size:9},callback:v=>`$${v}`}} };
-  if (m==='both') scales.y2 = { position:'right',grid:{display:false},ticks:{color:'#b8a898',font:{size:9},callback:v=>`${v}h`} };
-
-  if (weekChart) weekChart.destroy();
-  weekChart = new Chart(document.getElementById('weekChart'), {
-    type:'bar', data:{labels,datasets},
-    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label==='Ingresos'?fmt(c.raw):fmtH(c.raw)}}}, scales }
-  });
-}
-
-function renderMonthChart() {
-  const sorted = [...state.monthlyHistory].sort((a,b)=>a.monthKey.localeCompare(b.monthKey));
-  const years = [...new Set(sorted.map(m=>m.monthKey.slice(0,4)))].sort();
-  if (!state.selectedYear || !years.includes(state.selectedYear)) state.selectedYear = years[years.length-1];
-
-  // Year buttons
-  const yearsRow = document.getElementById('yearsRow');
-  yearsRow.innerHTML = years.length>1 ? years.map(y=>`<button class="year-btn${y===state.selectedYear?' active':''}" onclick="selectYear('${y}')">${y}</button>`).join('') : '';
-
-  const yearData = MONTHS_ES.map((name,i)=>{
-    const key = `${state.selectedYear}-${String(i+1).padStart(2,'0')}`;
-    const entry = sorted.find(m=>m.monthKey===key);
-    return { name, earnings:entry?+entry.earnings.toFixed(2):0, hours:entry?+entry.hours.toFixed(1):0 };
-  });
-
-  const m = state.monthMetric;
-  const datasets = [];
-  if (m==='earnings'||m==='both') datasets.push({ label:'Ingresos', data:yearData.map(d=>d.earnings), backgroundColor:'rgba(201,169,110,0.8)', borderRadius:5, yAxisID:'y' });
-  if (m==='hours'||m==='both') datasets.push({ label:'Horas', data:yearData.map(d=>d.hours), backgroundColor:'rgba(212,165,176,0.7)', borderRadius:5, yAxisID:m==='both'?'y2':'y' });
-
-  const _mcl=document.getElementById('monthChartLegend'); if(_mcl) _mcl.style.display=m==='both'?'flex':'none';
-
-  const scales = { x:{grid:{display:false},ticks:{color:'#b8a898',font:{size:9}}}, y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#b8a898',font:{size:9},callback:v=>`$${v}`}} };
-  if (m==='both') scales.y2 = { position:'right',grid:{display:false},ticks:{color:'#b8a898',font:{size:9},callback:v=>`${v}h`} };
-
-  if (monthChart) monthChart.destroy();
-  monthChart = new Chart(document.getElementById('monthChart'), {
-    type:'bar', data:{labels:yearData.map(d=>d.name), datasets},
-    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label==='Ingresos'?fmt(c.raw):fmtH(c.raw)}}}, scales }
-  });
 }
 
 function renderAnnualSummary() {
@@ -2268,88 +2178,6 @@ function renderAnnualSummary() {
   document.getElementById('annualContent').innerHTML = content;
 }
 
-// ============================================================
-// DAY-OF-MONTH CHART
-// ============================================================
-function renderDomChart() {
-  if (!state.days.length) return;
-
-  // Agrupar por día del mes (1–31): promedio de ganancias
-  const byDom = {}; // { 1: {total, count}, ... }
-  state.days.forEach(day => {
-    const dom = parseInt(day.date.slice(8)); // día del mes
-    if (!byDom[dom]) byDom[dom] = { total: 0, count: 0 };
-    byDom[dom].total += day.totalEarnings;
-    byDom[dom].count++;
-  });
-
-  // Construir array de los días que realmente tienen datos
-  const domData = [];
-  for (let d = 1; d <= 31; d++) {
-    if (byDom[d]) {
-      domData.push({
-        day: d,
-        avg: byDom[d].total / byDom[d].count,
-        count: byDom[d].count
-      });
-    }
-  }
-
-  if (!domData.length) return;
-
-  const maxAvg = Math.max(...domData.map(d => d.avg));
-  // Top 3 días para highlight
-  const sorted = [...domData].sort((a,b) => b.avg - a.avg);
-  const top3 = new Set(sorted.slice(0,3).map(d => d.day));
-
-  const colors = domData.map(d => {
-    if (d.day === sorted[0].day) return 'rgba(106,180,140,0.9)';   // verde fuerte: el mejor
-    if (top3.has(d.day))         return 'rgba(195,180,212,0.85)';  // lila: top 2 y 3
-    return 'rgba(232,221,208,0.75)';                                 // neutro: el resto
-  });
-
-  document.getElementById('domChartSub').textContent =
-    `Promedio de ganancias · días registrados: ${domData.length} · 🟢 mejor día del mes`;
-
-  if (domChart) domChart.destroy();
-  domChart = new Chart(document.getElementById('domChart'), {
-    type: 'bar',
-    data: {
-      labels: domData.map(d => d.day),
-      datasets: [{
-        data: domData.map(d => +d.avg.toFixed(2)),
-        backgroundColor: colors,
-        borderRadius: 5,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => `Día ${items[0].label} del mes`,
-            label: c => {
-              const entry = domData[c.dataIndex];
-              return [`Promedio: ${fmt(c.raw)}`, `Registrado ${entry.count} vez${entry.count!==1?'es':''}`];
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: '#b8a898', font: { size: 9 } }
-        },
-        y: {
-          grid: { color: 'rgba(0,0,0,0.04)' },
-          ticks: { color: '#b8a898', font: { size: 9 }, callback: v => `$${v}` }
-        }
-      }
-    }
-  });
-}
 function initAddForm() {
   const rd = document.getElementById('regDate');
   if (rd) rd.value = today();
@@ -2384,7 +2212,6 @@ function onDateChange() {
     const existingNotice = document.getElementById('existingDayNotice');
     if (existingNotice) {
       existingNotice.style.display = 'block';
-      const jE = existing.jasminEarnings !== undefined ? existing.jasminEarnings : existing.totalEarnings;
       existingNotice.innerHTML = '📌 Ya registraste este día: <strong>' + fmtH(existing.totalHours) + '</strong> · <strong>' + fmt(existing.totalEarnings) + '</strong><br>'
         + '<span style="font-size:10px;color:var(--textLight)">Los nuevos datos se sumarán al guardar · '
         + '<button onclick="editExistingDay(' + existing.id + ')" style="background:none;border:none;color:var(--lilacDark);font-size:10px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">✏️ editar en cambio</button></span>';
@@ -2891,27 +2718,6 @@ function updatePeriodEndPreview(platform) {
   preview.textContent = `📅 ${fmtDate(start)} → ${fmtDate(end)}`;
 }
 
-function savePeriodConfig(platform) {
-  const startVal = document.getElementById(platform+'PeriodStartInput').value;
-  const durVal   = parseInt(document.getElementById(platform+'PeriodDurationInput').value) || (platform==='general'?30:14);
-  if (!startVal) { alert('Por favor ingresa una fecha de inicio.'); return; }
-  state[platform+'PeriodStart']    = startVal;
-  state[platform+'PeriodDuration'] = Math.max(1, Math.min(365, durVal));
-  localStorage.setItem('lj_'+platform+'_period_start', state[platform+'PeriodStart']);
-  localStorage.setItem('lj_'+platform+'_period_duration', String(state[platform+'PeriodDuration']));
-  togglePeriodConfig(platform);
-  renderHeader();
-}
-
-function resetPeriodConfig(platform) {
-  state[platform+'PeriodStart']    = null;
-  state[platform+'PeriodDuration'] = platform==='general'?30:14;
-  localStorage.removeItem('lj_'+platform+'_period_start');
-  localStorage.setItem('lj_'+platform+'_period_duration', String(state[platform+'PeriodDuration']));
-  togglePeriodConfig(platform);
-  renderHeader();
-}
-
 // ============================================================
 // OBJETIVO GENERAL — CONFIG
 // ============================================================
@@ -2965,20 +2771,6 @@ function saveGeneralGoalConfig() {
 // ============================================================
 let tempRestDays = [];
 
-function toggleGoalEdit(platform) {
-  const form = document.getElementById(platform+'GoalForm');
-  if (!form) return;
-  const isVisible = form.style.display !== 'none';
-  form.style.display = isVisible ? 'none' : 'flex';
-  if (!isVisible) {
-    const defaults = { jasmin: 200, stripchat: 200, general: 1000, week: 200, month: 800 };
-    document.getElementById(platform+'GoalInput').value = state[platform+'Goal'] || defaults[platform] || 200;
-    // Load current rest days into temp state and refresh buttons inside this form
-    tempRestDays = [...(state.restDays || [])];
-    refreshTempRestBtns(form);
-  }
-}
-
 function refreshTempRestBtns(form) {
   form.querySelectorAll('.rest-day-btn').forEach(btn => {
     const dow = parseInt(btn.dataset.dow);
@@ -2994,17 +2786,6 @@ function toggleRestDayTemp(dow) {
   document.querySelectorAll('.goal-edit-form').forEach(form => {
     if (form.style.display !== 'none') refreshTempRestBtns(form);
   });
-}
-
-function saveGoal(platform) {
-  const defaults = { jasmin: 200, stripchat: 200, general: 1000, week: 200, month: 800 };
-  const val = parseFloat(document.getElementById(platform+'GoalInput').value) || defaults[platform] || 200;
-  state[platform+'Goal'] = val;
-  state.restDays = [...tempRestDays];
-  saveData();
-  const form = document.getElementById(platform+'GoalForm');
-  if (form) form.style.display = 'none';
-  renderHeader();
 }
 
 // ============================================================
@@ -3025,9 +2806,6 @@ function switchTab(name) {
   if (name==='destinos') renderDestinos();
 }
 
-// ============================================================
-// CHART METRIC TOGGLES
-// ============================================================
 // ============================================================
 // RENDER ALL
 // ============================================================
@@ -3192,7 +2970,6 @@ function renderStreak() {
   if (dotsRow) dotsRow.innerHTML = buildDots(false);
 
 
-
   // Hitos
   const milestonesEl = document.getElementById('streakMilestones');
   if (!milestonesEl) return;
@@ -3224,9 +3001,6 @@ function renderStreak() {
     </div>`;
   }).join('') || `<div style="font-size:12px;color:var(--textLight);text-align:center;padding:10px">Agrega tu primer hito 🎯</div>`;
 }
-
-const SHIELD_MIN_DAYS = 6;
-
 
 
 function showStreakMilestoneForm() {
@@ -3361,11 +3135,6 @@ function resetStreak() {
   renderAll();
 }
 
-function cancelResetStreak() {
-  const el = document.getElementById('resetStreakConfirm');
-  if (el) el.style.display = 'none';
-}
-
 function cancelStreakPrize() {
   const el = document.getElementById('streakInlineEdit');
   if (el) el.remove();
@@ -3382,9 +3151,6 @@ function renderAll() {
   if (activeTab==='destinos') renderDestinos();
 }
 
-// ============================================================
-// PREDICTION
-// ============================================================
 function renderPrediction() {
   if (state.weeklyHistory.length < 3) { document.getElementById('predCard').style.display = 'none'; return; }
   const sorted = [...state.weeklyHistory].sort((a,b) => a.weekKey.localeCompare(b.weekKey));
@@ -3404,27 +3170,6 @@ function renderPrediction() {
   document.getElementById('predDays').innerHTML = predDays.map((d,i) =>
     `<div class="pred-day-chip${i===0?' good':''}">${i===0?'⭐':''}${d.name} ${fmt(d.avg)}</div>`
   ).join('');
-}
-
-// ============================================================
-// WITHDRAWALS
-// ============================================================
-function saveWithdrawal() {
-  const amtEl = document.getElementById('wAmt');
-  if (!amtEl) return; // UI de retiros no disponible
-  const amt = parseFloat(amtEl.value);
-  const dateEl = document.getElementById('wDate');
-  const noteEl = document.getElementById('wNote');
-  const date = (dateEl && dateEl.value) || today();
-  const note = noteEl ? noteEl.value.trim() : '';
-  if (!amt || amt <= 0) { alert('Ingresa un monto válido'); return; }
-  state.withdrawals = state.withdrawals || [];
-  state.withdrawals.unshift({ id: Date.now(), amt, date, note });
-  localStorage.setItem('lj_withdrawals', JSON.stringify(state.withdrawals));
-  if (amtEl) amtEl.value = '';
-  if (noteEl) noteEl.value = '';
-  if (dateEl) dateEl.value = today();
-  renderWithdrawals();
 }
 
 function deleteWithdrawal(id) {
@@ -3490,11 +3235,6 @@ function renderWithdrawals() {
 
 function getEmotionByKey(key) {
   return EMOTIONS.find(e => e.key === key) || { emoji: '✨', label: key, valence: 0 };
-}
-
-function todayEmotionRecord() {
-  const d = today();
-  return state.emotions.find(e => e.date === d) || null;
 }
 
 function saveEmotion(moment, key, customLabel, customValence) {
@@ -3608,42 +3348,6 @@ function saveCustomEmotion(moment) {
   saveEmotion(moment, 'custom', val, selectedCat);
 }
 
-function renderEmotionHistory() {
-  const recent = [...state.emotions].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 14);
-  if (!recent.length) return '<div style="text-align:center;padding:24px;color:var(--textLight);font-size:13px">Aún no hay registros de ánimo.</div>';
-
-  return `
-    <div class="emo-history">
-      ${recent.map(r => {
-        const m = r.morning, ev = r.evening;
-        const dayName = DAYS_ES[new Date(r.date+'T12:00:00').getDay()];
-        const dateShort = r.date.slice(8) + '/' + r.date.slice(5,7);
-        let arrow = '', arrowColor = 'var(--textLight)';
-        if (m && ev) {
-          const _co = ['negative','sad','fear','disgust','neutral','positive'];
-          const _mi = _co.indexOf(getCat(m)), _ei = _co.indexOf(getCat(ev));
-          if (_ei > _mi) { arrow = '↑'; arrowColor = 'var(--green)'; }
-          else if (_ei < _mi) { arrow = '↓'; arrowColor = 'var(--roseDark)'; }
-          else { arrow = '→'; arrowColor = 'var(--lilacDark)'; }
-        }
-        return `
-          <div class="emo-history-row">
-            <div class="emo-hist-date">${dayName}<br><span style="font-size:10px;color:var(--textLight)">${dateShort}</span></div>
-            <div class="emo-hist-pair">
-              <span class="emo-hist-chip" title="${m?.label||'—'}">${m ? m.emoji : '·'}</span>
-              ${arrow ? `<span style="font-weight:bold;color:${arrowColor};font-size:14px">${arrow}</span>` : '<span style="color:var(--textLight);font-size:11px">···</span>'}
-              <span class="emo-hist-chip" title="${ev?.label||'—'}">${ev ? ev.emoji : '·'}</span>
-            </div>
-            <div class="emo-hist-labels">
-              <span>${m?.label||'—'}</span>
-              <span style="color:var(--textLight)">→</span>
-              <span>${ev?.label||'—'}</span>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>`;
-}
-
 function renderEmotionAnalysis() {
   const pairs = state.emotions.filter(e => e.morning && e.evening);
   if (pairs.length < 3) return `<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px;font-style:italic">Necesitas al menos 3 días con ambos registros para ver el análisis.</div>`;
@@ -3749,76 +3453,6 @@ function shiftEmoMonth(dir) {
   const el = document.getElementById('emoLineChart');
   if (el) el.innerHTML = renderEmoLineChart();
 }
-
-function renderMonthlyEmotionSummary() {
-  if (!state.emotions || state.emotions.length === 0)
-    return '<div style="text-align:center;padding:20px;color:var(--textLight);font-size:13px;font-style:italic">Aún no hay registros de ánimo suficientes.</div>';
-
-  // Agrupar por mes
-  const byMonth = {};
-  state.emotions.forEach(rec => {
-    const mk = rec.date.slice(0,7);
-    if (!byMonth[mk]) byMonth[mk] = [];
-    byMonth[mk].push(rec);
-  });
-
-  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
-  if (months.length === 0) return '';
-
-  // Clamp index
-  emoMonthIdx = Math.max(0, Math.min(months.length - 1, emoMonthIdx));
-  const mk = months[emoMonthIdx];
-  const [y, m] = mk.split('-');
-  const monthLabel = MONTHS_ES[parseInt(m)-1] + ' ' + y;
-  const records = byMonth[mk];
-
-  // Nav arrows
-  const canPrev = emoMonthIdx < months.length - 1;
-  const canNext = emoMonthIdx > 0;
-  const navHtml = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <button onclick="shiftEmoMonth(1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:${canPrev?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canPrev?'var(--text)':'var(--border)'};font-size:16px;cursor:${canPrev?'pointer':'default'};font-family:inherit" ${canPrev?'':'disabled'}>‹</button>
-      <div style="font-size:13px;font-weight:700;color:var(--lilacDark);letter-spacing:1px">🗓️ ${monthLabel}</div>
-      <button onclick="shiftEmoMonth(-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:${canNext?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};color:${canNext?'var(--text)':'var(--border)'};font-size:16px;cursor:${canNext?'pointer':'default'};font-family:inherit" ${canNext?'':'disabled'}>›</button>
-    </div>
-    <div style="text-align:center;font-size:10px;color:var(--textLight);margin-bottom:12px">${emoMonthIdx + 1} de ${months.length} ${months.length===1?'mes':'meses'}</div>`;
-
-  // Contar frecuencia
-  const freq = {};
-  records.forEach(rec => {
-    if (rec.morning) freq[rec.morning] = (freq[rec.morning] || 0) + 1;
-    if (rec.evening) freq[rec.evening] = (freq[rec.evening] || 0) + 1;
-  });
-
-  const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]);
-  if (sorted.length === 0)
-    return navHtml + '<div style="text-align:center;color:var(--textLight);font-size:12px;padding:12px">Sin registros este mes.</div>';
-
-  const maxCount = sorted[0][1];
-  const totalRegistros = records.length;
-
-  const rows = sorted.map(([key, count]) => {
-    const em = EMOTIONS.find(e => e.key === key) || { emoji:'✨', label: key, valence: 0 };
-    const pct = Math.round((count / maxCount) * 100);
-    const barColor = em.valence === 1 ? 'var(--green)' : em.valence === 0 ? 'var(--gold)' : em.valence === -1 ? '#6488d4' : 'var(--roseDark)';
-    return `
-      <div style="display:grid;grid-template-columns:120px 1fr 28px;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${em.emoji} ${em.label}</div>
-        <div style="height:8px;background:rgba(0,0,0,0.1);border-radius:99px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.5s ease"></div>
-        </div>
-        <div style="font-size:11px;color:var(--textMid);text-align:right">${count}</div>
-      </div>`;
-  }).join('');
-
-  return `
-    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:14px">
-      ${navHtml}
-      ${rows}
-      <div style="margin-top:10px;font-size:10px;color:var(--textLight);text-align:right">${totalRegistros} día${totalRegistros!==1?'s':''} registrados</div>
-    </div>`;
-}
-
 
 function renderEmoLineChart() {
   if (!state.emotions || state.emotions.length === 0)
@@ -4184,9 +3818,6 @@ function saveCortes() {
   syncGoalsFromActiveCorte();
   if (driveEnabled && driveToken) scheduleDriveSync();
 }
-
-// Alias legacy
-function saveDestinos() { saveCortes(); }
 
 // ── Días de descanso desde Destinos ─────────────────────────────
 function toggleRestDayGlobal(dow) {
@@ -4621,8 +4252,6 @@ function openDestinoForm(platform, corteId, editId) {
   }
   document.getElementById('destinoModal').style.display = 'flex';
 }
-
-function editDestino(platform, corteId, id) { openDestinoForm(platform, corteId, id); }
 
 function closeDestinoModal() {
   const m = document.getElementById('destinoModal');
