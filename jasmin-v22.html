@@ -2363,8 +2363,8 @@ function onDateChange() {
   const existing = state.days.find(d=>d.date===date);
   const addTitle = document.getElementById('addTabTitle');
   const saveBtn = document.getElementById('saveBlockBtn');
-  if (addTitle) addTitle.textContent = existing ? 'Editar día' : 'Nuevo día';
-  if (saveBtn) saveBtn.textContent = existing ? 'Actualizar día' : 'Guardar día';
+  if (addTitle) addTitle.textContent = existing ? 'Agregar bloque' : 'Nuevo día';
+  if (saveBtn) saveBtn.textContent = existing ? '➕ Agregar bloque' : 'Guardar día';
 
   // Limpiar extras pendientes al cambiar de fecha
   pendingExtraIncomes = [];
@@ -2439,7 +2439,6 @@ function editExistingDay(id) {
 
 function cancelEdit() {
   editingDayId = null;
-  document.getElementById('regDate').value = '';
   document.getElementById('hoursWorkedH').value = '';
   document.getElementById('hoursWorkedM').value = '';
   document.getElementById('jasminEarningsInput').value = '';
@@ -2450,10 +2449,8 @@ function cancelEdit() {
   refreshPeriodBtn();
   pendingExtraIncomes = [];
   renderPendingExtraIncomes();
-  const notice = document.getElementById('existingDayNotice');
-  if (notice) notice.style.display = 'none';
-  const saveBtn = document.getElementById('saveBlockBtn');
-  if (saveBtn) saveBtn.textContent = 'Guardar día';
+  // Volver a modo "agregar bloque" para la misma fecha
+  onDateChange();
 }
 
 function togglePeriod() {
@@ -2645,11 +2642,8 @@ function saveBlock() {
   saveData();
   renderAll();
 
-  // Reset form — volver a estado limpio para nuevo registro
+  // Reset form — limpiar campos de trabajo, mantener fecha para facilitar bloques consecutivos
   editingDayId = null;
-  const _notice = document.getElementById('existingDayNotice');
-  if (_notice) _notice.style.display = 'none';
-  document.getElementById("regDate").value = "";
   document.getElementById("hoursWorkedH").value = "";
   document.getElementById("hoursWorkedM").value = "";
   document.getElementById("jasminEarningsInput").value = "";
@@ -2660,12 +2654,30 @@ function saveBlock() {
   refreshPeriodBtn();
   pendingExtraIncomes = [];
   renderPendingExtraIncomes();
-  const addTitle2 = document.getElementById("addTabTitle");
-  if (addTitle2) addTitle2.textContent = "Nuevo día";
-  const btn = document.getElementById("saveBlockBtn");
-  btn.textContent = "✓ Día guardado";
-  btn.className = "btn-primary saved";
-  setTimeout(()=>{ btn.textContent = "Guardar día"; btn.className="btn-primary"; },1500);
+  // Actualizar aviso con el nuevo total del día (o limpiarlo si no hay datos)
+  const _savedDate = document.getElementById("regDate").value;
+  const _savedDay  = state.days.find(d => d.date === _savedDate);
+  const _notice    = document.getElementById('existingDayNotice');
+  const addTitle2  = document.getElementById("addTabTitle");
+  const btn        = document.getElementById("saveBlockBtn");
+  if (_savedDay) {
+    if (_notice) {
+      _notice.style.display = 'block';
+      _notice.innerHTML = '📌 Total del día: <strong>' + fmtH(_savedDay.totalHours) + '</strong> · <strong>' + fmt(_savedDay.totalEarnings) + '</strong><br>'
+        + '<span style="font-size:10px;color:var(--textLight)">Los nuevos datos se sumarán · '
+        + '<button onclick="editExistingDay(' + _savedDay.id + ')" style="background:none;border:none;color:var(--lilacDark);font-size:10px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">✏️ editar en cambio</button></span>';
+    }
+    if (addTitle2) addTitle2.textContent = 'Agregar bloque';
+    btn.textContent = "✓ Bloque guardado";
+    btn.className = "btn-primary saved";
+    setTimeout(()=>{ btn.textContent = "➕ Agregar bloque"; btn.className="btn-primary"; }, 1500);
+  } else {
+    if (_notice) _notice.style.display = 'none';
+    if (addTitle2) addTitle2.textContent = 'Nuevo día';
+    btn.textContent = "✓ Guardado";
+    btn.className = "btn-primary saved";
+    setTimeout(()=>{ btn.textContent = "Guardar día"; btn.className="btn-primary"; }, 1500);
+  }
 }
 
 // ============================================================
